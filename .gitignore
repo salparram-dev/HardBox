@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.log
+*.db
+*.sqlite3
+
+# Virtual env
+venv/
+env/
+ENV/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos temporales
+*.bak
+*.swp
+*.tmp
+*.orig
+*~
+
+# PowerShell
+*.ps1.xml
+*.ps1~        # backups temporales
+*.ps1.bak
+*.psd1
+*.psm1
+
+# Instaladores descargados
+*.msi
+*.exe
+*.zip
+
+# Logs de ejecución o análisis
+/logs/
+*.log
+
+# Archivos generados por usuario
+/user_data/
+*.csv
+*.json
+
+# Configs locales
+config.ini
+secrets.env
+.env
+.env.*
+
+# Seguridad
+*.cer
+*.key
+*.pem
+*.pfx
