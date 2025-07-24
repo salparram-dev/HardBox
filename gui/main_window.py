@@ -1,4 +1,22 @@
-# main.py
+# main_window.py
+import ctypes, sys
+
+# Si no somos admin, reiniciamos el script con privilegios elevados
+def elevar_privilegios():
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        # Ejecutar el mismo script Python como administrador
+        ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            sys.executable,
+            " ".join([f"\"{arg}\"" for arg in sys.argv]),
+            None,
+            1
+        )
+        sys.exit(0)
+
+elevar_privilegios()
+
 import customtkinter as ctk
 import tkinter.messagebox as messagebox
 import os, sys
@@ -7,6 +25,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
 from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
+from gui.sections import *
 
 
 SECTIONS = [
