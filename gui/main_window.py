@@ -1,15 +1,14 @@
 # main_window.py
 import ctypes, sys
 
-# Si no somos admin, reiniciamos el script con privilegios elevados
+# Si no somos admin, reiniciamos el script Python con privilegios elevados
 def elevar_privilegios():
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        # Ejecutar el mismo script Python como administrador
         ctypes.windll.shell32.ShellExecuteW(
             None,
             "runas",
             sys.executable,
-            " ".join([f"\"{arg}\"" for arg in sys.argv]),
+            " ".join([f'"{arg}"' for arg in sys.argv]),
             None,
             1
         )
@@ -19,25 +18,13 @@ elevar_privilegios()
 
 import customtkinter as ctk
 import tkinter.messagebox as messagebox
-import os, sys
-# Añadir el directorio raíz del proyecto al sys.path
+import os
+from PIL import Image
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
 from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
-from gui.sections import *
-
-
-SECTIONS = [
-    ("Seguridad Local", "local_security"),
-    ("Servicios", "services"),
-    ("Windows Defender", "defender"),
-    ("Acceso Remoto", "rdp"),
-    ("Auditoría", "auditing"),
-    ("Control USB", "usb"),
-    ("Cortafuegos", "firewall"),
-    ("IDS / EDR", "ids_edr")
-]
+from gui.sections import SECTIONS, DESCRIPTIONS, IMAGES
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -56,10 +43,9 @@ class HardBoxApp:
         log_btn = ctk.CTkButton(self.root, text="⚙ Avanzado", width=90, command=self.abrir_logs)
         log_btn.place(relx=1.0, rely=0.0, x=-110, y=10, anchor="ne")
 
-
         for section_name, script_name in SECTIONS:
             self.add_section(section_name, script_name)
-   
+
     def abrir_logs(self):
         LogViewerWindow(self.root)
 
@@ -68,6 +54,15 @@ class HardBoxApp:
 
         title_label = ctk.CTkLabel(tab, text=section_title, font=ctk.CTkFont(size=20, weight="bold"))
         title_label.pack(pady=15)
+
+        image_path = IMAGES.get(script_base)
+        if image_path and os.path.exists(image_path):
+            img = ctk.CTkImage(light_image=Image.open(image_path), size=(70, 70))
+            img_label = ctk.CTkLabel(tab, image=img, text="")
+            img_label.pack(pady=(0, 10))
+
+        desc_label = ctk.CTkLabel(tab, text=DESCRIPTIONS.get(script_base, ""), wraplength=600, justify="left")
+        desc_label.pack(pady=(0, 15))
 
         button_frame = ctk.CTkFrame(tab)
         button_frame.pack(pady=10)
