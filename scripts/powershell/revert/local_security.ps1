@@ -6,6 +6,8 @@ try {
     if (Test-Path $backupPath) {
         secedit /configure /db secedit.sdb /cfg $backupPath /areas SECURITYPOLICY
         Write-Output "Configuración de seguridad restaurada desde backup."
+
+        
     } else {
         Write-Output "No se encontró respaldo previo en $backupPath. No se realizaron cambios."
     }
