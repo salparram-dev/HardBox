@@ -1,10 +1,19 @@
 # scripts/powershell/apply/rdp.ps1
+# Desactiva RDP y bloquea reglas de firewall relacionadas
 
 try {
-    $key = 'HKLM:\System\CurrentControlSet\Control\Terminal Server'
-    Set-ItemProperty -Path $key -Name 'fDenyTSConnections' -Value 1
-    Write-Output "RDP desactivado correctamente."
-} catch {
-    Write-Output "Error al activar RDP: $_"
-}
+    # Desactivar RDP (conexiones remotas)
+    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 1
 
+    # Deshabilitar reglas de firewall de RDP (español e inglés)
+    $rdpRules = Get-NetFirewallRule | Where-Object {
+        $_.DisplayGroup -match "Remote Desktop|Escritorio remoto"
+    }
+    $rdpRules | ForEach-Object {
+        Disable-NetFirewallRule -Name $_.Name
+    }
+
+    Write-Output "RDP deshabilitado y reglas de firewall bloqueadas."
+} catch {
+    Write-Output "Error deshabilitando RDP: $_"
+}
