@@ -1,10 +1,10 @@
 # scripts/powershell/apply/defender.ps1
 # Refuerza la configuración de Windows Defender según el perfil CCN-STIC-599 (perfil estándar)
 
-$backupPath = "C:\\windows\\temp\\defender_state_backup.json"
-
 try {
-    $currentState = @{
+    $backupPath = "C:\\windows\\temp\\defender_state_backup.json"
+    if (!(Test-Path $backupPath)) {
+        $currentState = @{
         DisableRealtimeMonitoring = (Get-MpPreference).DisableRealtimeMonitoring
         MAPSReporting = (Get-MpPreference).MAPSReporting
         SubmitSamplesConsent = (Get-MpPreference).SubmitSamplesConsent
@@ -12,6 +12,7 @@ try {
     }
 
     $currentState | ConvertTo-Json | Set-Content -Path $backupPath -Encoding UTF8
+    }
 
     # Aplicar configuración endurecida
     Set-MpPreference -DisableRealtimeMonitoring $false

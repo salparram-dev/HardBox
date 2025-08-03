@@ -35,5 +35,6 @@ foreach ($svc in $services) {
         Write-Output "Error al modificar el servicio '$svc': $_"
     }
 }
-
-$serviceStates | ConvertTo-Json | Set-Content -Path $backupPath -Encoding UTF8
+if (!(Test-Path $backupPath)) {
+    $serviceStates | ConvertTo-Json | Set-Content -Path $backupPath -Encoding UTF8
+}
