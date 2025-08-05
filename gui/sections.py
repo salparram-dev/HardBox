@@ -12,14 +12,14 @@ SECTIONS = [
 ]
 
 DESCRIPTIONS = {
-    "local_security": "Aplica medidas como contraseñas seguras, bloqueo de sesión y configuración de cuentas.",
-    "services": "Desactiva servicios innecesarios para reducir la superficie de exposición del sistema.",
-    "defender": "Configura Windows Defender con ajustes recomendados por el CCN para proteger contra malware.",
-    "rdp": "Desactiva el acceso remoto al sistema mediante Escritorio Remoto para evitar conexiones no autorizadas.",
-    "auditing": "Activa auditoría de seguridad para registrar eventos críticos y cambios en el sistema.",
-    "usb": "Restringe el uso de dispositivos USB para prevenir la extracción de datos o infecciones.",
-    "firewall": "Aplica una plantilla segura al cortafuegos de Windows para controlar el tráfico entrante y saliente.",
-    "ids_edr": "Permite activar Snort (IDS) y Velociraptor (EDR) para detección de amenazas y respuesta."
+    "local_security": "Refuerza las reglas de contraseñas: mínimo de caracteres, complejidad, historial y bloqueo tras intentos fallidos.",
+    "services": "Desactiva servicios innecesarios para reducir riesgos de seguridad sin afectar el uso diario.",
+    "defender": "Configura Windows Defender con opciones recomendadas para reforzar la detección de amenazas.",
+    "rdp": "Desactiva el acceso por Escritorio Remoto para evitar conexiones no autorizadas desde otros equipos.",
+    "auditing": "Activa registros de actividad clave como inicios de sesión, bloqueos y cambios de configuración.",
+    "usb": "Restringe el uso de dispositivos USB para evitar robo de información o infecciones por malware.",
+    "firewall": "Activa y configura correctamente el cortafuegos de Windows para bloquear conexiones no seguras.",
+    "ids_edr": "Permite habilitar Snort y Velociraptor para detectar y responder ante actividades maliciosas."
 }
 
 IMAGES = {

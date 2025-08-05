@@ -73,9 +73,9 @@ class LogViewerWindow(ctk.CTkToplevel):
         if choice == "Todos":
             self.filtered_logs = self.logs
         elif choice == "Aplicar":
-            self.filtered_logs = [l for l in self.logs if l["action"] == "Aplicar"]
+            self.filtered_logs = [l for l in self.logs if l["action"] == "Apply"]
         elif choice == "Revertir":
-            self.filtered_logs = [l for l in self.logs if l["action"] == "Revertir"]
+            self.filtered_logs = [l for l in self.logs if l["action"] == "Revert"]
         elif choice == "✔️ Éxito":
             self.filtered_logs = [l for l in self.logs if l["success"]]
         elif choice == "❌ Error":
