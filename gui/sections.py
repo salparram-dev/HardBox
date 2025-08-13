@@ -8,7 +8,6 @@ SECTIONS = [
     ("Auditoría", "auditing"),
     ("Control USB", "usb"),
     ("Cortafuegos", "firewall"),
-    ("IDS / EDR", "ids_edr")
 ]
 
 DESCRIPTIONS = {
@@ -18,8 +17,7 @@ DESCRIPTIONS = {
     "rdp": "Desactiva el acceso por Escritorio Remoto para evitar conexiones no autorizadas desde otros equipos.",
     "auditing": "Activa registros de actividad clave como inicios de sesión, bloqueos y cambios de configuración.",
     "usb": "Restringe el uso de dispositivos USB para evitar robo de información o infecciones por malware.",
-    "firewall": "Activa y configura correctamente el cortafuegos de Windows para bloquear conexiones no seguras.",
-    "ids_edr": "Permite habilitar Snort y Velociraptor para detectar y responder ante actividades maliciosas."
+    "firewall": "Activa y configura correctamente el cortafuegos de Windows para bloquear conexiones no seguras."
 }
 
 IMAGES = {
