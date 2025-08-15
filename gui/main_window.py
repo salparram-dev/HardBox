@@ -24,7 +24,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
 from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
-from gui.ids_viewer import IDSWindow
+from gui.ids.ids_viewer import IDSWindow
 from gui.sections import SECTIONS, DESCRIPTIONS, IMAGES
 
 SCRIPT_PATH = "scripts/powershell"
