@@ -34,7 +34,7 @@ def run_command(command: str) -> dict:
             timeout=120,
             check=True
         )
-        output = (completed.stdout + completed.stderr).strip()
+        output = (completed.stderr + completed.stdout).strip()
         return {
             "success": True,
             "output": output

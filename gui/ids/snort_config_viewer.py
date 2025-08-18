@@ -1,4 +1,4 @@
-# gui/snort_config_window.py
+# gui/snort_config_viewer.py
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
