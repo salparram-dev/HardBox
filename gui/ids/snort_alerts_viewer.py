@@ -7,16 +7,28 @@ import threading
 import re
 from PIL import Image, ImageDraw
 import pystray
+from plyer import notification
 
 class SnortAlertsWindow(ctk.CTkToplevel):
+    _instance = None   # Singleton global
+
+    @classmethod
+    def open(cls, master=None):
+        """Crea o restaura la ventana singleton de alertas"""
+        if cls._instance is None or not cls._instance.winfo_exists():
+            cls._instance = cls(master=None)  # <--- importante: siempre None
+        else:
+            cls._instance.deiconify()
+            cls._instance.lift()
+            cls._instance.focus_force()
+        return cls._instance
+
     def __init__(self, master=None):
-        super().__init__(master)
+        super().__init__(master or None)
         self.title("Snort - Alertas y Reglas")
         self.geometry("950x800")
 
-         # Guarda referencia en el master si existe ese atributo
-        if master is not None and hasattr(master, "alerts_window"):
-            master.alerts_window = self
+        SnortAlertsWindow._instance = self  # registrar singleton
 
         self.alert_file = self.detect_alert_file()
         self.rules_file = self.ensure_rules_file()
@@ -107,10 +119,11 @@ class SnortAlertsWindow(ctk.CTkToplevel):
 
         self.load_alerts()
         self.load_rules()
+        self.last_alerts_count = 0  # para contar alertas previas
         self.after(3000, self.auto_refresh)
 
     # =========================
-    # NUEVO: Manejo de cierre
+    # Manejo de cierre / systray
     # =========================
     def on_close(self):
         if self.running:
@@ -121,12 +134,8 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                 return
             else:
                 self.stop_ids()
-        # Se va a destruir: limpiar la referencia del master
-        try:
-            if self.master is not None and hasattr(self.master, "alerts_window") and self.master.alerts_window is self:
-                self.master.alerts_window = None
-        except Exception:
-            pass
+        # destruir instancia singleton
+        SnortAlertsWindow._instance = None
         self.destroy()
 
     def show_in_tray(self):
@@ -147,6 +156,8 @@ class SnortAlertsWindow(ctk.CTkToplevel):
             if self.running:
                 self.stop_ids()
             self.tray_icon.stop()
+            self.tray_icon = None
+            SnortAlertsWindow._instance = None
             self.destroy()
 
         menu = pystray.Menu(
@@ -220,6 +231,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
     def clear_alerts(self):
         if self.alert_file:
             open(self.alert_file, "w").close()
+            self.last_alerts_count = 0
             self.load_alerts()
 
     # =========================
@@ -321,6 +333,28 @@ class SnortAlertsWindow(ctk.CTkToplevel):
         messagebox.showinfo("IDS", "Snort detenido.")
 
     def auto_refresh(self):
-        if self.running:
-            self.load_alerts()
+        if self.running and self.alert_file and os.path.exists(self.alert_file):
+            with open(self.alert_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = [line.strip() for line in f if line.strip()]
+
+            current_count = len(lines)
+
+            if current_count > self.last_alerts_count:
+                new_alerts = lines[self.last_alerts_count:]
+                latest_alert = new_alerts[-1] if new_alerts else "Nueva alerta de Snort"
+                notification.notify(
+                    title="🚨 Snort IDS",
+                    message=f"{len(new_alerts)} nueva(s) alerta(s)\n{latest_alert[:150]}",
+                    timeout=5
+                )
+                self.last_alerts_count = current_count
+
+            # Actualizar área de texto
+            self.alert_text.delete("1.0", "end")
+            self.alert_text.insert("1.0", "\n".join(lines))
+
+        elif self.running:
+            self.alert_text.delete("1.0", "end")
+            self.alert_text.insert("1.0", "Esperando alertas...")
+
         self.after(3000, self.auto_refresh)

@@ -3,7 +3,7 @@ import customtkinter as ctk
 import os
 from utils.powershell_runner import run_powershell, run_command
 from gui.ids.snort_config_viewer import SnortConfigWindow
-from gui.ids.snort_alerts_viewer import SnortAlertsWindow 
+from gui.ids.snort_alerts_viewer import SnortAlertsWindow
 import tkinter.messagebox as messagebox
 
 SCRIPT_PATH = "scripts/powershell"
@@ -13,8 +13,6 @@ class IDSWindow(ctk.CTkToplevel):
         super().__init__(master)
         self.title("IDS - Snort")
         self.geometry("800x600")
-        
-        self.alerts_window = None
 
         ctk.CTkLabel(
             self,
@@ -34,7 +32,7 @@ class IDSWindow(ctk.CTkToplevel):
                 command=lambda: SnortConfigWindow(self)
             ).pack(pady=5)
 
-            # Botón para abrir gestión de alertas
+            # Botón para abrir gestión de alertas (singleton)
             ctk.CTkButton(
                 self,
                 text="Gestionar alertas",
@@ -56,19 +54,9 @@ class IDSWindow(ctk.CTkToplevel):
             instalar_btn.pack(pady=15)
 
     def abrir_alertas(self):
-        # Si no existe o fue destruida, crea una nueva
-        if self.alerts_window is None or not self.alerts_window.winfo_exists():
-            self.alerts_window = SnortAlertsWindow(self)
-            return
+        """Abre o restaura la ventana singleton de alertas"""
+        SnortAlertsWindow.open()
 
-        # Ya existe: restaurar y traer al frente
-        try:
-            self.alerts_window.deiconify()
-        except Exception:
-            pass
-        self.alerts_window.lift()
-        self.alerts_window.focus_force()
-        
     def snort_instalado(self) -> bool:
         """Comprueba si Snort está disponible en el sistema."""
         result = run_command("snort -V")
