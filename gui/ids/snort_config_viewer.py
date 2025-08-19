@@ -3,6 +3,7 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
 import re
+from utils.snort_utils import detect_snort_conf
 
 class SnortConfigWindow(ctk.CTkToplevel):
     def __init__(self, master=None):
@@ -10,7 +11,7 @@ class SnortConfigWindow(ctk.CTkToplevel):
         self.title("Configuración de Snort")
         self.geometry("950x750")
 
-        self.config_path = self.detect_snort_conf()
+        self.config_path = detect_snort_conf()
 
         # Título
         ctk.CTkLabel(self, text="Configuración de Snort", font=ctk.CTkFont(size=22, weight="bold")).pack(pady=15)
@@ -72,17 +73,6 @@ class SnortConfigWindow(ctk.CTkToplevel):
                       command=self.save_config).pack(side="left", padx=10)
         ctk.CTkButton(btn_frame, text="Cerrar", fg_color="#f44336", hover_color="#d32f2f",
                       command=self.destroy).pack(side="left", padx=10)
-
-    def detect_snort_conf(self):
-        possible_paths = [
-            r"C:\Snort\etc\snort.conf",
-            r"C:\Program Files\Snort\etc\snort.conf",
-            r"C:\Program Files (x86)\Snort\etc\snort.conf"
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                return path
-        return None
 
     def change_config_path(self):
         new_path = filedialog.askopenfilename(title="Seleccionar snort.conf", filetypes=[("Conf Files", "*.conf")])

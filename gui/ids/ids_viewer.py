@@ -5,6 +5,9 @@ from utils.powershell_runner import run_powershell, run_command
 from gui.ids.snort_config_viewer import SnortConfigWindow
 from gui.ids.snort_alerts_viewer import SnortAlertsWindow
 import tkinter.messagebox as messagebox
+import shutil
+from utils.snort_utils import detect_snort_conf
+
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -63,15 +66,27 @@ class IDSWindow(ctk.CTkToplevel):
         return result["success"]
 
     def instalar_snort(self):
-        """Ejecuta el script PowerShell para instalar Snort."""
+        """Ejecuta el script PowerShell para instalar Snort y reemplaza snort.conf por el personalizado."""
         ps1_path = os.path.join(SCRIPT_PATH, "install", "install_snort.ps1")
         result = run_powershell(ps1_path)
         if result["success"]:
-            messagebox.showinfo("Instalación", "Snort instalado correctamente.")
+            # Buscar ruta real de snort.conf
+            conf_path = detect_snort_conf()
+            if conf_path:
+                try:
+                    custom_conf = os.path.join("resources", "snort.conf")
+                    shutil.copyfile(custom_conf, conf_path)
+                    messagebox.showinfo("Instalación", f"Snort instalado correctamente.\nSe ha reemplazado el snort.conf con el personalizado.")
+                except Exception as e:
+                    messagebox.showwarning("Aviso", f"Snort instalado, pero no se pudo reemplazar snort.conf:\n{e}")
+            else:
+                messagebox.showwarning("Aviso", "Snort instalado, pero no se encontró snort.conf para reemplazar.")
+
             self.destroy()
             IDSWindow(self.master)  # Recarga la ventana
         else:
             messagebox.showerror("Error", result["output"])
+
 
     def mostrar_info_snort(self):
         """Muestra la información de versión de Snort."""

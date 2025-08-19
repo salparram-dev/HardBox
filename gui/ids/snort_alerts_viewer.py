@@ -8,6 +8,7 @@ import re
 from PIL import Image, ImageDraw
 import pystray
 from plyer import notification
+from utils.snort_utils import *
 
 class SnortAlertsWindow(ctk.CTkToplevel):
     _instance = None   # Singleton global
@@ -30,8 +31,8 @@ class SnortAlertsWindow(ctk.CTkToplevel):
 
         SnortAlertsWindow._instance = self  # registrar singleton
 
-        self.alert_file = self.detect_alert_file()
-        self.rules_file = self.ensure_rules_file()
+        self.alert_file = detect_alert_file()
+        self.rules_file = detect_local_rules()
 
         self.snort_process = None
         self.running = False
@@ -188,32 +189,6 @@ class SnortAlertsWindow(ctk.CTkToplevel):
             messagebox.showerror("Error", f"No se pudieron obtener interfaces: {e}")
             return []
 
-    def detect_alert_file(self):
-        possible_paths = [
-            r"C:\Snort\log\alert.ids",
-            r"C:\Program Files\Snort\log\alert.ids",
-            r"C:\Program Files (x86)\Snort\log\alert.ids"
-        ]
-        for path in possible_paths:
-            folder = os.path.dirname(path)
-            if os.path.exists(folder):
-                return path
-        return None
-
-    def ensure_rules_file(self):
-        possible_paths = [
-            r"C:\Snort\rules\local.rules",
-            r"C:\Program Files\Snort\rules\local.rules",
-            r"C:\Program Files (x86)\Snort\rules\local.rules"
-        ]
-        for path in possible_paths:
-            folder = os.path.dirname(path)
-            if os.path.exists(folder):
-                if not os.path.exists(path):
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write("# Reglas locales de Snort\n")
-                return path
-        return None
 
     def load_alerts(self):
         self.alert_text.delete("1.0", "end")
@@ -285,7 +260,11 @@ class SnortAlertsWindow(ctk.CTkToplevel):
             return
 
         try:
-            snort_conf = r"C:\Snort\etc\snort.conf"
+            snort_conf = detect_snort_conf()
+            if not snort_conf:
+                messagebox.showerror("Error", "No se encontró snort.conf")
+                return
+
             log_dir = os.path.dirname(self.alert_file)
             selected_desc = self.interface_var.get()
             iface = next((idx for idx, desc in self.interfaces if desc == selected_desc), None)
