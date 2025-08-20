@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 import pystray
 from plyer import notification
 from utils.snort_utils import *
+from utils.logger import log_action
 
 class SnortAlertsWindow(ctk.CTkToplevel):
     _instance = None   # Singleton global
@@ -204,8 +205,10 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                                           "Inicie Snort para generar alertas aquí.")
 
     def clear_alerts(self):
-        if self.alert_file:
+        confirm = messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos las alertas registradas?")
+        if self.alert_file and confirm:
             open(self.alert_file, "w").close()
+            log_action("Snort-Limpiar alertas", self.alert_file, {"success": True, "output": "Alertas borradas"})
             self.last_alerts_count = 0
             self.load_alerts()
 
@@ -238,14 +241,18 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                 f.write(rule + "\n")
 
             self.load_rules()
+            log_action("Snort-Añadir regla", self.rules_file, {"success": True, "output": rule})
             messagebox.showinfo("Éxito", "Regla añadida correctamente.")
         except Exception as e:
+            log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "No se ha podido añadir la regla"})
             messagebox.showerror("Error", str(e))
 
     def save_rules(self):
         if self.rules_file:
             with open(self.rules_file, "w", encoding="utf-8") as f:
                 f.write(self.rules_text.get("1.0", "end").strip())
+
+            log_action("Snort-Guardar reglas", self.rules_file, {"success": True, "output": "Reglas actualizadas"})
             messagebox.showinfo("Éxito", "Reglas guardadas correctamente.")
 
     # =========================
@@ -291,10 +298,12 @@ class SnortAlertsWindow(ctk.CTkToplevel):
             self.running = True
             self.start_btn.configure(state="disabled")
             self.stop_btn.configure(state="normal")
+            log_action("Snort-Iniciar IDS", "snort", {"success": True, "output": f"Interfaz {iface}"})
             messagebox.showinfo("IDS", f"Snort iniciado en interfaz {iface}.")
 
             threading.Thread(target=self._log_snort_output, daemon=True).start()
         except Exception as e:
+            log_action("Snort-Iniciar IDS", "snort", {"success": False, "output": "No se ha podido iniciar la ejecución"})
             messagebox.showerror("Error", str(e))
 
     def _log_snort_output(self):
@@ -309,6 +318,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
         self.running = False
         self.start_btn.configure(state="normal")
         self.stop_btn.configure(state="disabled")
+        log_action("Snort-Detener IDS", "snort", {"success": True, "output": "Proceso terminado"})
         messagebox.showinfo("IDS", "Snort detenido.")
 
     def auto_refresh(self):

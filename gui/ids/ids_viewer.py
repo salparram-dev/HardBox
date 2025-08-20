@@ -7,6 +7,7 @@ from gui.ids.snort_alerts_viewer import SnortAlertsWindow
 import tkinter.messagebox as messagebox
 import shutil
 from utils.snort_utils import detect_snort_conf
+from utils.logger import log_action
 
 
 SCRIPT_PATH = "scripts/powershell"
@@ -69,6 +70,7 @@ class IDSWindow(ctk.CTkToplevel):
         """Ejecuta el script PowerShell para instalar Snort y reemplaza snort.conf por el personalizado."""
         ps1_path = os.path.join(SCRIPT_PATH, "install", "install_snort.ps1")
         result = run_powershell(ps1_path)
+        log_action("Snort-Instalar", ps1_path, result)
         if result["success"]:
             # Buscar ruta real de snort.conf
             conf_path = detect_snort_conf()

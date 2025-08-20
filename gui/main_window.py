@@ -41,7 +41,7 @@ class HardBoxApp:
         self.tabview = ctk.CTkTabview(self.root)
         self.tabview.pack(fill='both', expand=True, padx=10, pady=10)
 
-        log_btn = ctk.CTkButton(self.root, text="⚙ Logs", width=90, command=self.abrir_logs)
+        log_btn = ctk.CTkButton(self.root, text="⚙ Acciones", width=90, command=self.abrir_logs)
         log_btn.place(relx=1.0, rely=0.0, x=-110, y=10, anchor="ne")
 
         ids_btn = ctk.CTkButton(self.root, text="🔍 IDS (Snort)", width=120, command=self.abrir_ids)
@@ -95,7 +95,11 @@ class HardBoxApp:
     def run_script(self, mode, base_name):
         ps1_path = os.path.join(SCRIPT_PATH, mode, f"{base_name}.ps1")
         result = run_powershell(ps1_path)
-        log_action(mode.capitalize(), ps1_path, result)
+        if mode == "apply":
+            log_action("Aplicar", ps1_path, result)
+        elif mode == "revert":
+            log_action("Revertir", ps1_path, result)
+
         if result["success"]:
             messagebox.showinfo("Éxito", result["output"])
         else:

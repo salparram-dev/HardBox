@@ -4,6 +4,7 @@ from tkinter import filedialog, messagebox
 import os
 import re
 from utils.snort_utils import detect_snort_conf
+from utils.logger import log_action
 
 class SnortConfigWindow(ctk.CTkToplevel):
     def __init__(self, master=None):
@@ -113,10 +114,14 @@ class SnortConfigWindow(ctk.CTkToplevel):
             try:
                 with open(self.config_path, "w", encoding="utf-8") as f:
                     f.write(self.config_content)
+
+                log_action("Snort-Guardar configuración", "snort", {"success": True, "output": "Configuración básica guardada"})
                 messagebox.showinfo("Éxito", "Configuración básica guardada correctamente.")
             except Exception as e:
+                log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración básica"})
                 messagebox.showerror("Error", str(e))
         else:
+            log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración básica"})
             messagebox.showerror("Error", "Ruta de configuración no definida.")
 
 
@@ -125,8 +130,12 @@ class SnortConfigWindow(ctk.CTkToplevel):
             try:
                 with open(self.config_path, "w", encoding="utf-8") as f:
                     f.write(self.text_area.get("1.0", "end").strip())
+
+                log_action("Snort-Guardar configuración", "snort", {"success": True, "output": "Configuración guardada"})
                 messagebox.showinfo("Éxito", "Configuración guardada correctamente.")
             except Exception as e:
+                log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración"})
                 messagebox.showerror("Error", str(e))
         else:
+            log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración"})
             messagebox.showerror("Error", "Ruta de configuración no definida.")

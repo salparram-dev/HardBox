@@ -19,11 +19,11 @@ class LogViewerWindow(ctk.CTkToplevel):
 
         self.filter_var = ctk.StringVar(value="Todos")
 
-        # Filtros
+        # Filtros (se actualizarán dinámicamente en load_logs)
         self.filter_box = ctk.CTkOptionMenu(
             self,
             variable=self.filter_var,
-            values=["Todos", "Aplicar", "Revertir", "✔️ Éxito", "❌ Error"],
+            values=["Todos"],  # inicial, luego se actualizará
             command=self.apply_filter
         )
         self.filter_box.pack(pady=10)
@@ -60,6 +60,26 @@ class LogViewerWindow(ctk.CTkToplevel):
                     continue
         self.filtered_logs = self.logs.copy()
 
+        # Actualizar opciones del filtro dinámicamente
+        self.update_filter_options()
+
+    def update_filter_options(self):
+        """Reconstruye el menú de filtros con las acciones detectadas en los logs"""
+        base_filters = ["Todos", "Aplicar", "Revertir", "✔️ Éxito", "❌ Error"]
+
+        # Obtener todas las acciones únicas en los logs
+        acciones = sorted(set(l["action"] for l in self.logs if "action" in l))
+
+        # Unir base + dinámicas
+        all_filters = base_filters + [a for a in acciones if a not in base_filters]
+
+        # Actualizar OptionMenu
+        self.filter_box.configure(values=all_filters)
+
+        # Si el valor actual ya no existe, resetear a "Todos"
+        if self.filter_var.get() not in all_filters:
+            self.filter_var.set("Todos")
+
     def display_logs(self):
         self.textbox.configure(state="normal")  # Habilitar edición temporal
         self.textbox.delete("1.0", "end")
@@ -70,16 +90,24 @@ class LogViewerWindow(ctk.CTkToplevel):
         self.textbox.configure(state="disabled")  # Bloquear edición tras insertar
 
     def apply_filter(self, choice):
-        if choice == "Todos":
-            self.filtered_logs = self.logs
-        elif choice == "Aplicar":
-            self.filtered_logs = [l for l in self.logs if l["action"] == "Apply"]
-        elif choice == "Revertir":
-            self.filtered_logs = [l for l in self.logs if l["action"] == "Revert"]
-        elif choice == "✔️ Éxito":
-            self.filtered_logs = [l for l in self.logs if l["success"]]
-        elif choice == "❌ Error":
-            self.filtered_logs = [l for l in self.logs if not l["success"]]
+        # Diccionario de filtros predefinidos
+        filters = {
+            "Todos": lambda l: True,
+            "Aplicar": lambda l: l["action"] == "Aplicar",
+            "Revertir": lambda l: l["action"] == "Revertir",
+            "✔️ Éxito": lambda l: l["success"],
+            "❌ Error": lambda l: not l["success"],
+        }
+
+        # Si el filtro es uno de los predefinidos, lo usamos
+        if choice in filters:
+            filtro = filters[choice]
+        else:
+            # Si no, filtramos directamente por el nombre de la acción (ej: "Snort-Iniciar IDS")
+            filtro = lambda l: l["action"] == choice
+
+        # Aplicar filtro
+        self.filtered_logs = [l for l in self.logs if filtro(l)]
         self.display_logs()
 
     def export_csv(self):
@@ -99,10 +127,10 @@ class LogViewerWindow(ctk.CTkToplevel):
             open(LOG_FILE, "w").close()
             self.logs.clear()
             self.filtered_logs.clear()
+            self.update_filter_options()
             self.display_logs()
             messagebox.showinfo("Limpiado", "Logs eliminados con éxito.")
             
     def refresh_logs(self):
         self.load_logs()
         self.apply_filter(self.filter_var.get())
-
