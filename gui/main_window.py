@@ -24,6 +24,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
 from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
+from gui.edr.edr_viewer import EDRWindow
 from gui.ids.ids_viewer import IDSWindow
 from gui.sections import SECTIONS, DESCRIPTIONS, IMAGES
 
@@ -41,17 +42,35 @@ class HardBoxApp:
         self.tabview = ctk.CTkTabview(self.root)
         self.tabview.pack(fill='both', expand=True, padx=10, pady=10)
 
-        log_btn = ctk.CTkButton(self.root, text="⚙ Acciones", width=90, command=self.abrir_logs)
-        log_btn.place(relx=1.0, rely=0.0, x=-110, y=10, anchor="ne")
+        # --- Navegación superior con SegmentedButton ---
+        self.top_nav = ctk.CTkSegmentedButton(
+            self.root,
+            values=["🛡️ EDR", "🔍 IDS", "⚙ Acciones"],
+            command=self.handle_top_nav,
+            width=500
+        )
+        self.top_nav.place(relx=1.0, rely=0.0, x=-20, y=10, anchor="ne")
+        #self.top_nav.set("⚙ Acciones")  # por defecto
 
-        ids_btn = ctk.CTkButton(self.root, text="🔍 IDS (Snort)", width=120, command=self.abrir_ids)
-        ids_btn.place(relx=1.0, rely=0.0, x=-240, y=10, anchor="ne")
 
         for section_name, script_name in SECTIONS:
             self.add_section(section_name, script_name)
+    
+    def handle_top_nav(self, choice):
+        if choice == "⚙ Acciones":
+            self.abrir_logs()
+        elif choice == "🔍 IDS":
+            self.abrir_ids()
+        elif choice == "🛡️ EDR":
+            self.abrir_edr()
+
 
     def abrir_logs(self):
         LogViewerWindow(self.root)
+    
+    def abrir_edr(self):
+        EDRWindow(self.root)
+
     
     def abrir_ids(self):
         IDSWindow(self.root)
