@@ -4,6 +4,7 @@ import shutil
 import tkinter.messagebox as messagebox
 from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
+from gui.edr.edr_config_viewer import VelociraptorConfigWindow
 from utils.logger import log_action
 
 SCRIPT_PATH = "scripts/powershell"
@@ -32,7 +33,7 @@ class EDRWindow(ctk.CTkToplevel):
             ctk.CTkButton(
                 self,
                 text="Configurar Velociraptor",
-                command=self.configurar_velociraptor
+                command=lambda: VelociraptorConfigWindow(self)
             ).pack(pady=5)
 
             ctk.CTkButton(
@@ -72,9 +73,6 @@ class EDRWindow(ctk.CTkToplevel):
             EDRWindow(self.master)  # Recargar ventana
         else:
             messagebox.showerror("Error", result["output"])
-
-    def configurar_velociraptor(self):
-        messagebox.showinfo("Configurar", "Aquí abriremos el configurador de Velociraptor (pendiente).")
 
     def gestionar_servicio(self):
         messagebox.showinfo("Servicio", "Aquí pondremos start/stop del servicio Velociraptor (pendiente).")
