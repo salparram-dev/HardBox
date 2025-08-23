@@ -2,9 +2,11 @@ import customtkinter as ctk
 import os
 import shutil
 import tkinter.messagebox as messagebox
+import threading
 from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
 from gui.edr.edr_config_viewer import VelociraptorConfigWindow
+from utils.edr_utils import detect_config_file
 from utils.logger import log_action
 
 SCRIPT_PATH = "scripts/powershell"
@@ -61,18 +63,55 @@ class EDRWindow(ctk.CTkToplevel):
         result = run_command("velociraptor version")
         return result["success"]
 
-    def instalar_velociraptor(self):
-        """Ejecuta el script PowerShell para instalar Velociraptor."""
-        ps1_path = os.path.join(SCRIPT_PATH, "install", "install_velociraptor.ps1")
-        result = run_powershell(ps1_path)
-        log_action("Velociraptor-Instalar", ps1_path, result)
 
-        if result["success"]:
-            messagebox.showinfo("Instalación", "Velociraptor instalado correctamente.")
-            self.destroy()
-            EDRWindow(self.master)  # Recargar ventana
-        else:
-            messagebox.showerror("Error", result["output"])
+    def instalar_velociraptor(self):
+        """Ejecuta el script PowerShell para instalar Velociraptor y reemplaza client.config.yaml por el personalizado."""
+        def worker():
+            ps1_path = os.path.join(SCRIPT_PATH, "install", "install_velociraptor.ps1")
+            result = run_powershell(ps1_path)
+            log_action("Velociraptor-Instalar", ps1_path, result)
+
+            if result["success"]:
+                install_dir = detect_config_file()
+                default_config = os.path.join(install_dir, "client.config.yaml")
+                custom_config = os.path.join("resources", "server.config.yaml")
+
+                try:
+                    if os.path.exists(custom_config):
+                        # Eliminar el config generado por el instalador
+                        if os.path.exists(default_config):
+                            os.remove(default_config)
+
+                        # Copiar el personalizado en su lugar
+                        shutil.copy(custom_config, install_dir)
+
+                        self.after(0, lambda: messagebox.showinfo(
+                            "Instalación",
+                            f"Velociraptor instalado correctamente.\n"
+                            f"Se eliminó el client.config.yaml y se reemplazó con {custom_config}"
+                        ))
+                    else:
+                        self.after(0, lambda: messagebox.showwarning(
+                            "Configuración",
+                            "Velociraptor instalado, pero no se encontró el archivo "
+                            "resources/server.config.yaml. Se mantiene el default."
+                        ))
+                        
+                except Exception as e:
+                    self.after(0, lambda: messagebox.showerror(
+                        "Error",
+                        f"Error al reemplazar la configuración: {e}"
+                    ))
+
+                # Recargar ventana
+                self.after(0, lambda: (self.destroy(), EDRWindow(self.master)))
+            else:
+                self.after(0, lambda: messagebox.showerror("Error", result["output"]))
+
+        # Lanzar en segundo plano para no congelar la UI
+        threading.Thread(target=worker, daemon=True).start()
+
+
 
     def gestionar_servicio(self):
         messagebox.showinfo("Servicio", "Aquí pondremos start/stop del servicio Velociraptor (pendiente).")
