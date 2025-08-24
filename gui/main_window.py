@@ -64,16 +64,17 @@ class HardBoxApp:
         elif choice == "🛡️ EDR":
             self.abrir_edr()
 
-
     def abrir_logs(self):
-        LogViewerWindow(self.root)
+        win = LogViewerWindow(self.root)
+        win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
     
     def abrir_edr(self):
-        EDRWindow(self.root)
+        win = EDRWindow(self.root)
+        win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
-    
     def abrir_ids(self):
-        IDSWindow(self.root)
+        win = IDSWindow(self.root)
+        win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
     def add_section(self, section_title, script_base):
         tab = self.tabview.add(section_title)
