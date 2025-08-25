@@ -124,7 +124,7 @@ class VelociraptorConfigWindow(ctk.CTkToplevel):
             self.server_url_var.set(urls[0] if urls else "")
 
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo cargar el archivo:\n{e}")
+            messagebox.showerror("Error", f"No se pudo cargar el archivo:\n{e}", parent=self)
     
 
     def save_basic_config(self):
@@ -201,12 +201,12 @@ class VelociraptorConfigWindow(ctk.CTkToplevel):
 
             log_action("Velociraptor-Guardar configuración", self.config_path,
                     {"success": True, "output": "Configuración básica guardada"})
-            messagebox.showinfo("Éxito", "Configuración básica guardada correctamente.")
+            messagebox.showinfo("Éxito", "Configuración básica guardada correctamente.", parent=self)
 
         except Exception as e:
             log_action("Velociraptor-Guardar configuración", self.config_path,
                     {"success": False, "output": str(e)})
-            messagebox.showerror("Error", f"No se pudo guardar la configuración básica:\n{e}")
+            messagebox.showerror("Error", f"No se pudo guardar la configuración básica:\n{e}", parent=self)
 
 
     def save_config(self):
@@ -218,8 +218,8 @@ class VelociraptorConfigWindow(ctk.CTkToplevel):
 
             log_action("Velociraptor-Guardar Configuración", config_path,
                        {"success": True, "output": "Configuración guardada"})
-            messagebox.showinfo("Éxito", "Configuración avanzada guardada correctamente.")
+            messagebox.showinfo("Éxito", "Configuración avanzada guardada correctamente.", parent=self)
         except Exception as e:
             log_action("Velociraptor-Guardar Configuración", self.config_path,
                        {"success": False, "output": str(e)})
-            messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{e}")
+            messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{e}", parent=self)

@@ -130,7 +130,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
     def on_close(self):
         if self.running:
             if not messagebox.askyesno("IDS en ejecución",
-                                       "Snort está corriendo.\n¿Quieres detenerlo al cerrar la ventana?"):
+                                       "Snort está corriendo.\n¿Quieres detenerlo al cerrar la ventana?", parent=self):
                 self.withdraw()
                 self.show_in_tray()
                 return
@@ -187,7 +187,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                     interfaces.append((idx, display))
             return interfaces
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudieron obtener interfaces: {e}")
+            messagebox.showerror("Error", f"No se pudieron obtener interfaces: {e}", parent=self)
             return []
 
 
@@ -205,7 +205,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                                           "Inicie Snort para generar alertas aquí.")
 
     def clear_alerts(self):
-        confirm = messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos las alertas registradas?")
+        confirm = messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos las alertas registradas?", parent=self)
         if self.alert_file and confirm:
             open(self.alert_file, "w").close()
             log_action("Snort-Limpiar alertas", self.alert_file, {"success": True, "output": "Alertas borradas"})
@@ -227,7 +227,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
         try:
             sid_value = self.sid_var.get().strip()
             if not sid_value.isdigit():
-                messagebox.showerror("Error", "El SID debe ser numérico")
+                messagebox.showerror("Error", "El SID debe ser numérico", parent=self)
                 return
 
             rule = (
@@ -242,10 +242,10 @@ class SnortAlertsWindow(ctk.CTkToplevel):
 
             self.load_rules()
             log_action("Snort-Añadir regla", self.rules_file, {"success": True, "output": rule})
-            messagebox.showinfo("Éxito", "Regla añadida correctamente.")
+            messagebox.showinfo("Éxito", "Regla añadida correctamente.", parent=self)
         except Exception as e:
             log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "No se ha podido añadir la regla"})
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("Error", str(e), parent=self)
 
     def save_rules(self):
         if self.rules_file:
@@ -253,30 +253,30 @@ class SnortAlertsWindow(ctk.CTkToplevel):
                 f.write(self.rules_text.get("1.0", "end").strip())
 
             log_action("Snort-Guardar reglas", self.rules_file, {"success": True, "output": "Reglas actualizadas"})
-            messagebox.showinfo("Éxito", "Reglas guardadas correctamente.")
+            messagebox.showinfo("Éxito", "Reglas guardadas correctamente.", parent=self)
 
     # =========================
     # IDS
     # =========================
     def start_ids(self):
         if not self.rules_file:
-            messagebox.showerror("Error", "No se encontró local.rules")
+            messagebox.showerror("Error", "No se encontró local.rules", parent=self)
             return
         if not self.alert_file:
-            messagebox.showerror("Error", "No se encontró carpeta de logs para alertas")
+            messagebox.showerror("Error", "No se encontró carpeta de logs para alertas", parent=self)
             return
 
         try:
             snort_conf = detect_snort_conf()
             if not snort_conf:
-                messagebox.showerror("Error", "No se encontró snort.conf")
+                messagebox.showerror("Error", "No se encontró snort.conf", parent=self)
                 return
 
             log_dir = os.path.dirname(self.alert_file)
             selected_desc = self.interface_var.get()
             iface = next((idx for idx, desc in self.interfaces if desc == selected_desc), None)
             if not iface:
-                messagebox.showerror("Error", "No se pudo determinar el índice de la interfaz seleccionada")
+                messagebox.showerror("Error", "No se pudo determinar el índice de la interfaz seleccionada", parent=self)
                 return
 
             cmd = [
@@ -299,12 +299,12 @@ class SnortAlertsWindow(ctk.CTkToplevel):
             self.start_btn.configure(state="disabled")
             self.stop_btn.configure(state="normal")
             log_action("Snort-Iniciar IDS", "snort", {"success": True, "output": f"Interfaz {iface}"})
-            messagebox.showinfo("IDS", f"Snort iniciado en interfaz {iface}.")
+            messagebox.showinfo("IDS", f"Snort iniciado en interfaz {iface}.", parent=self)
 
             threading.Thread(target=self._log_snort_output, daemon=True).start()
         except Exception as e:
             log_action("Snort-Iniciar IDS", "snort", {"success": False, "output": "No se ha podido iniciar la ejecución"})
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("Error", str(e), parent=self)
 
     def _log_snort_output(self):
         if self.snort_process:
@@ -319,7 +319,7 @@ class SnortAlertsWindow(ctk.CTkToplevel):
         self.start_btn.configure(state="normal")
         self.stop_btn.configure(state="disabled")
         log_action("Snort-Detener IDS", "snort", {"success": True, "output": "Proceso terminado"})
-        messagebox.showinfo("IDS", "Snort detenido.")
+        messagebox.showinfo("IDS", "Snort detenido.", parent=self)
 
     def auto_refresh(self):
         if self.running and self.alert_file and os.path.exists(self.alert_file):

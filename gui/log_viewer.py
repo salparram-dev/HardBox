@@ -11,7 +11,7 @@ LOG_FILE = "logs/hardbox_actions.log"
 class LogViewerWindow(ctk.CTkToplevel):
     def __init__(self, master):
         super().__init__(master)
-        self.title("Historial de Acciones - Avanzado")
+        self.title("Historial de Acciones")
         self.geometry("800x500")
 
         self.logs = []
@@ -112,24 +112,24 @@ class LogViewerWindow(ctk.CTkToplevel):
 
     def export_csv(self):
         if not self.filtered_logs:
-            messagebox.showwarning("Aviso", "No hay logs para exportar.")
+            messagebox.showwarning("Aviso", "No hay logs para exportar.", parent=self)
             return
         out_path = "logs/export.csv"
         with open(out_path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.logs[0].keys())
             writer.writeheader()
             writer.writerows(self.filtered_logs)
-        messagebox.showinfo("Exportado", f"Logs exportados en {out_path}")
+        messagebox.showinfo("Exportado", f"Logs exportados en {out_path}", parent=self)
 
     def clear_logs(self):
-        confirm = messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los logs?")
+        confirm = messagebox.askyesno("Confirmar", "¿Estás seguro de borrar todos los logs?", parent=self)
         if confirm:
             open(LOG_FILE, "w").close()
             self.logs.clear()
             self.filtered_logs.clear()
             self.update_filter_options()
             self.display_logs()
-            messagebox.showinfo("Limpiado", "Logs eliminados con éxito.")
+            messagebox.showinfo("Limpiado", "Logs eliminados con éxito.", parent=self)
             
     def refresh_logs(self):
         self.load_logs()

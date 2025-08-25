@@ -2,7 +2,7 @@
 import ctypes, sys
 
 # Si no somos admin, reiniciamos el script Python con privilegios elevados
-def elevar_privilegios():
+def elevate_privileges():
     if not ctypes.windll.shell32.IsUserAnAdmin():
         ctypes.windll.shell32.ShellExecuteW(
             None,
@@ -14,7 +14,7 @@ def elevar_privilegios():
         )
         sys.exit(0)
 
-elevar_privilegios()
+elevate_privileges()
 
 import customtkinter as ctk
 import tkinter.messagebox as messagebox
@@ -27,6 +27,7 @@ from gui.log_viewer import LogViewerWindow
 from gui.edr.edr_viewer import EDRWindow
 from gui.ids.ids_viewer import IDSWindow
 from gui.sections import SECTIONS, DESCRIPTIONS, IMAGES
+from utils.window_utils import top_focus
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -58,22 +59,28 @@ class HardBoxApp:
     
     def handle_top_nav(self, choice):
         if choice == "⚙ Acciones":
-            self.abrir_logs()
+            self.open_logs()
         elif choice == "🔍 IDS":
-            self.abrir_ids()
+            self.open_ids()
         elif choice == "🛡️ EDR":
-            self.abrir_edr()
+            self.open_edr()
 
-    def abrir_logs(self):
+    def open_logs(self):
         win = LogViewerWindow(self.root)
+        top_focus(win)
+        win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
     
-    def abrir_edr(self):
+    def open_edr(self):
         win = EDRWindow(self.root)
+        top_focus(win)
+        win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
-    def abrir_ids(self):
+    def open_ids(self):
         win = IDSWindow(self.root)
+        top_focus(win)
+        win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
     def add_section(self, section_title, script_base):

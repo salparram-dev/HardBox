@@ -87,7 +87,7 @@ class SnortConfigWindow(ctk.CTkToplevel):
             with open(self.config_path, "r", encoding="utf-8", errors="ignore") as f:
                 self.config_content = f.read()
         else:
-            messagebox.showerror("Error", "No se puede cargar snort.conf")
+            messagebox.showerror("Error", "No se puede cargar snort.conf", parent=self)
 
     def extract_value(self, key):
         match = re.search(rf"^{key}\s+(.+)$", self.config_content, re.MULTILINE)
@@ -95,7 +95,7 @@ class SnortConfigWindow(ctk.CTkToplevel):
 
     def save_basic_config(self):
         if not self.config_content:
-            messagebox.showerror("Error", "No hay configuración cargada.")
+            messagebox.showerror("Error", "No hay configuración cargada.", parent=self)
             return
 
         # Actualizamos las líneas en memoria
@@ -116,13 +116,13 @@ class SnortConfigWindow(ctk.CTkToplevel):
                     f.write(self.config_content)
 
                 log_action("Snort-Guardar configuración", "snort", {"success": True, "output": "Configuración básica guardada"})
-                messagebox.showinfo("Éxito", "Configuración básica guardada correctamente.")
+                messagebox.showinfo("Éxito", "Configuración básica guardada correctamente.", parent=self)
             except Exception as e:
                 log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración básica"})
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror("Error", str(e), parent=self)
         else:
             log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración básica"})
-            messagebox.showerror("Error", "Ruta de configuración no definida.")
+            messagebox.showerror("Error", "Ruta de configuración no definida.", parent=self)
 
 
     def save_config(self):
@@ -132,10 +132,10 @@ class SnortConfigWindow(ctk.CTkToplevel):
                     f.write(self.text_area.get("1.0", "end").strip())
 
                 log_action("Snort-Guardar configuración", "snort", {"success": True, "output": "Configuración guardada"})
-                messagebox.showinfo("Éxito", "Configuración guardada correctamente.")
+                messagebox.showinfo("Éxito", "Configuración guardada correctamente.", parent=self)
             except Exception as e:
                 log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración"})
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror("Error", str(e), parent=self)
         else:
             log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración"})
-            messagebox.showerror("Error", "Ruta de configuración no definida.")
+            messagebox.showerror("Error", "Ruta de configuración no definida.", parent=self)

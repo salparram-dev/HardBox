@@ -8,6 +8,7 @@ from utils.powershell_runner import run_powershell, run_command
 from gui.edr.edr_config_viewer import VelociraptorConfigWindow
 from utils.edr_utils import detect_config_file
 from utils.logger import log_action
+from utils.window_utils import top_focus
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -29,13 +30,13 @@ class EDRWindow(ctk.CTkToplevel):
             ctk.CTkLabel(self, image=edr_img, text="").pack(pady=10)
         
 
-        if self.velociraptor_instalado():
+        if self.is_installed():
             ctk.CTkLabel(self, text="Velociraptor está instalado y listo para usar.").pack(pady=10)
 
             ctk.CTkButton(
                 self,
                 text="Configurar Velociraptor",
-                command=lambda: VelociraptorConfigWindow(self)
+                command=self.open_config
             ).pack(pady=5)
 
             ctk.CTkButton(
@@ -43,28 +44,28 @@ class EDRWindow(ctk.CTkToplevel):
                 text="Gestionar servicio",
                 fg_color="#FF9800",
                 hover_color="#F57C00",
-                command=self.gestionar_servicio
+                command=self.manage_service
             ).pack(pady=5)
 
-            self.mostrar_info_velociraptor()
+            self.show_info()
         else:
             ctk.CTkLabel(self, text="Velociraptor no está instalado.").pack(pady=10)
-            instalar_btn = ctk.CTkButton(
+            install_btn = ctk.CTkButton(
                 self,
                 text="Instalar Velociraptor",
                 fg_color="#4CAF50",
                 hover_color="#45A049",
-                command=self.instalar_velociraptor
+                command=self.install
             )
-            instalar_btn.pack(pady=15)
+            install_btn.pack(pady=15)
 
-    def velociraptor_instalado(self) -> bool:
+    def is_installed(self) -> bool:
         """Comprueba si Velociraptor está disponible en el sistema."""
         result = run_command("velociraptor version")
         return result["success"]
 
 
-    def instalar_velociraptor(self):
+    def install(self):
         """Ejecuta el script PowerShell para instalar Velociraptor y reemplaza client.config.yaml por el personalizado."""
         def worker():
             ps1_path = os.path.join(SCRIPT_PATH, "install", "install_velociraptor.ps1")
@@ -111,12 +112,15 @@ class EDRWindow(ctk.CTkToplevel):
         # Lanzar en segundo plano para no congelar la UI
         threading.Thread(target=worker, daemon=True).start()
 
+    def open_config(self):
+        """Abre la ventana de configuración"""
+        win = VelociraptorConfigWindow(self)
+        top_focus(win)
 
+    def manage_service(self):
+        messagebox.showinfo("Servicio", "Aquí pondremos start/stop del servicio Velociraptor (pendiente).", parent=self)
 
-    def gestionar_servicio(self):
-        messagebox.showinfo("Servicio", "Aquí pondremos start/stop del servicio Velociraptor (pendiente).")
-
-    def mostrar_info_velociraptor(self):
+    def show_info(self):
         """Muestra información de la versión de Velociraptor."""
         result = run_command("velociraptor version")
         info_text = result["output"]
