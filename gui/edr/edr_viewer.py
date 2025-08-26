@@ -1,3 +1,4 @@
+# gui/edr/edr_viewer.py
 import customtkinter as ctk
 import os
 import shutil
@@ -6,6 +7,7 @@ import threading
 from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
 from gui.edr.edr_config_viewer import VelociraptorConfigWindow
+from gui.edr.edr_service_viewer import VelociraptorServiceWindow
 from utils.edr_utils import detect_config_file
 from utils.logger import log_action
 from utils.window_utils import top_focus
@@ -64,7 +66,6 @@ class EDRWindow(ctk.CTkToplevel):
         result = run_command("velociraptor version")
         return result["success"]
 
-
     def install(self):
         """Ejecuta el script PowerShell para instalar Velociraptor y reemplaza client.config.yaml por el personalizado."""
         def worker():
@@ -118,7 +119,9 @@ class EDRWindow(ctk.CTkToplevel):
         top_focus(win)
 
     def manage_service(self):
-        messagebox.showinfo("Servicio", "Aquí pondremos start/stop del servicio Velociraptor (pendiente).", parent=self)
+        """Abre la ventana independiente de gestión de servicio Velociraptor"""
+        win = VelociraptorServiceWindow.open() 
+        top_focus(win)
 
     def show_info(self):
         """Muestra información de la versión de Velociraptor."""

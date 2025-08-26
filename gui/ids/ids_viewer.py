@@ -7,7 +7,7 @@ from gui.ids.ids_alerts_viewer import SnortAlertsWindow
 import tkinter.messagebox as messagebox
 import shutil
 from PIL import Image
-from utils.snort_utils import detect_snort_conf
+from utils.ids_utils import detect_snort_conf
 from utils.logger import log_action
 from utils.window_utils import top_focus
 

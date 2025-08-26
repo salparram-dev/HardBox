@@ -3,7 +3,7 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
 import re
-from utils.snort_utils import detect_snort_conf
+from utils.ids_utils import detect_snort_conf
 from utils.logger import log_action
 
 class SnortConfigWindow(ctk.CTkToplevel):

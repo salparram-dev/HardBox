@@ -1,4 +1,4 @@
-# gui/snort_alerts_viewer.py
+# gui/ids/snort_alerts_viewer.py
 import customtkinter as ctk
 from tkinter import messagebox
 import os
@@ -8,7 +8,7 @@ import re
 from PIL import Image, ImageDraw
 import pystray
 from plyer import notification
-from utils.snort_utils import *
+from utils.ids_utils import *
 from utils.logger import log_action
 
 class SnortAlertsWindow(ctk.CTkToplevel):
