@@ -3,7 +3,7 @@ import customtkinter as ctk
 from tkinter import messagebox, ttk
 import subprocess
 import threading
-import os
+import time
 import yaml
 import json
 from collections import Counter
@@ -73,10 +73,25 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         self.tab_files = self.tabview.add("Archivos recientes")
 
         # inicializar cada tabla + refresco automático
-        self._init_query_tab(self.tab_procs, "Procesos", "SELECT Name,Pid,Username FROM pslist()", self.show_process_charts)
-        self._init_query_tab(self.tab_conns, "Conexiones", "SELECT LocalAddress,RemoteAddress,State FROM netstat()", self.show_conn_chart)
-        self._init_query_tab(self.tab_services, "Servicios", "SELECT Name,DisplayName,State FROM services()", self.show_service_chart)
-        self._init_query_tab(self.tab_files, "Archivos", "SELECT Name,Mtime FROM glob(globs='C:\\\\Users\\\\*\\\\Documents\\\\*') LIMIT 20", self.show_files_chart)
+        process_query = "SELECT Name,Pid,Username FROM pslist()"
+        conn_query = "SELECT Laddr.IP,Laddr.Port,Raddr.IP,Raddr.Port,Status,TypeString FROM netstat()"
+        serv_query = "SELECT Name,DisplayName,State,StartMode FROM wmi(query='SELECT Name, DisplayName, State, StartMode " \
+        "FROM Win32_Service', namespace='root/CIMV2')"
+        files_query = (
+            "SELECT Name, Mtime, OSPath "
+            "FROM glob(globs='C:\\\\Users\\\\**', accessor='file') "
+            "WHERE NOT IsDir "
+            "AND Size > 0 "
+            "AND Mtime > now() - 30*24*60*60 "
+            "AND Name =~ '(?i)\\.(py|exe|dll|bat|ps1|vbs|js|jar|cmd|msi|scr|com|doc|docx|xls|xlsx|ppt|pptx|pdf|rtf|txt|csv|zip|rar|7z|gz|tar|iso|img|bin|dat|cfg|ini|conf|xml|json|png|jpg|jpeg|gif|bmp|tiff|svg|mp3|wav|mp4|avi|mkv)$' "
+            "ORDER BY Mtime DESC "
+            "LIMIT 200"
+        )
+
+        self._init_query_tab(self.tab_procs, "Procesos", process_query, self.show_process_charts)
+        self._init_query_tab(self.tab_conns, "Conexiones", conn_query, self.show_conn_chart)
+        self._init_query_tab(self.tab_services, "Servicios", serv_query, self.show_service_charts)
+        self._init_query_tab(self.tab_files, "Archivos", files_query, self.show_files_chart)
 
         # Estilo de tablas moderno
         style = ttk.Style()
@@ -88,20 +103,10 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         style.map("Treeview", background=[("selected", "#1f6aa5")])
 
         # Ejecutar las consultas iniciales automáticamente
-        self.after(500, lambda: self.run_query("SELECT Name,Pid,Username FROM pslist()", self.tab_procs, self.show_process_charts))
-        self.after(1000, lambda: self.run_query("SELECT Laddr.IP,Laddr.Port," \
-        "Raddr.IP,Raddr.Port,Status,TypeString FROM netstat()", self.tab_conns, self.show_conn_chart))
-        self.after(
-            1500,
-            lambda: self.run_query(
-                "SELECT Name, DisplayName, State "
-                "FROM wmi(query='SELECT Name, DisplayName, State FROM Win32_Service', namespace='root/CIMV2')",
-                self.tab_services,
-                self.show_service_chart
-            )
-        )
-
-        self.after(2000, lambda: self.run_query("SELECT Name,Mtime FROM glob(globs='C:\\\\Users\\\\*\\\\Documents\\\\*') LIMIT 20", self.tab_files, self.show_files_chart))
+        self.after(500, lambda: self.run_query(process_query, self.tab_procs, self.show_process_charts))
+        self.after(1000, lambda: self.run_query(conn_query, self.tab_conns, self.show_conn_chart))
+        self.after(1500,lambda: self.run_query(serv_query, self.tab_services, self.show_service_charts))
+        self.after(2000, lambda: self.run_query(files_query, self.tab_files, self.show_files_chart))
 
     def _init_query_tab(self, parent, label, query, chart_callback):
         """Inicializa una pestaña con tabla y botón de refresco"""
@@ -245,34 +250,68 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
     def run_query(self, query: str, tab, chart_callback):
         """Ejecuta consultas VQL y muestra resultados en tabla y gráfica"""
         try:
-            result = subprocess.run(
-                ["velociraptor", "query", query, "--format", "jsonl"],
-                capture_output=True, text=True
-            )
-            output = result.stdout.strip().splitlines()
+            cmd = f'velociraptor query "{query}" --format jsonl'
 
-            if not output:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                shell=True
+            )
+
+            raw_output = result.stdout if result.stdout.strip() else result.stderr
+
+            if not raw_output:
                 messagebox.showinfo("Consulta", "No se encontraron resultados.", parent=self)
                 return
 
-            rows = [json.loads(line) for line in output]
+            output = raw_output.strip().splitlines()
+            rows = []
+            for line in output:
+                try:
+                    row = json.loads(line)
+                    # limpieza de textos
+                    for k, v in row.items():
+                        if isinstance(v, str):
+                            row[k] = v.encode("utf-8", "ignore").decode("utf-8", "ignore").strip()
+                    rows.append(row)
+                except json.JSONDecodeError:
+                    continue
+
+            if not rows:
+                return
 
             # limpiar tabla
             tree = getattr(tab, "tree")
             for col in tree.get_children():
                 tree.delete(col)
 
-            # configurar columnas dinámicamente
+            headers = {
+                "Name": "Nombre",
+                "DisplayName": "Nombre visible",
+                "State": "Estado",
+                "StartMode": "Modo de arranque",
+                "Pid": "PID",
+                "Username": "Usuario",
+                "Mtime": "Última modificación",
+                "Laddr.IP": "IP local",
+                "Laddr.Port": "Puerto local",
+                "Raddr.IP": "IP remota",
+                "Raddr.Port": "Puerto remoto",
+                "Status": "Estado",
+                "TypeString": "Protocolo",
+                "OSPath": "Protocolo",
+            }
+
             tree["columns"] = list(rows[0].keys())
             for col in tree["columns"]:
-                tree.heading(col, text=col)
+                col_title = headers.get(col, col)
+                tree.heading(col, text=col_title)
                 tree.column(col, width=200, anchor="center")
 
-            # insertar filas
             for row in rows:
                 tree.insert("", "end", values=[row.get(col, "") for col in tree["columns"]])
 
-            # mostrar gráfica(s)
             chart_callback(rows, getattr(tab, "chart_frame"))
 
         except Exception as e:
@@ -364,17 +403,47 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
                         "Conexiones por estado", "Estado", "Cantidad")
 
 
-    def show_service_chart(self, rows, chart_frame):
-        # Normalizamos el valor de State: si está vacío o None → "Desconocido"
-        counts = Counter([str(r.get("State") or "Desconocido") for r in rows])
-        
-        self._render_chart(
-            counts,
-            chart_frame,
-            "Servicios por estado",
-            "Estado",
-            "Cantidad"
-        )
+    def show_service_charts(self, rows, chart_frame):
+        # Limpiar el frame de gráficas
+        for widget in chart_frame.winfo_children():
+            widget.destroy()
+
+        # Contar servicios por estado
+        counts_state = Counter([str(r.get("State") or "Desconocido") for r in rows])
+        # Contar servicios por modo de arranque
+        counts_startmode = Counter([str(r.get("StartMode") or "Desconocido") for r in rows])
+
+        # Crear figura con dos subplots
+        fig = Figure(figsize=(12, 5), dpi=100, constrained_layout=True)
+        ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(122)
+
+        # --- Gráfico 1: Servicios por estado ---
+        bars1 = ax1.bar(counts_state.keys(), counts_state.values(),
+                        color="#1f77b4", edgecolor="black")
+        ax1.set_title("Servicios por estado", fontsize=12, fontweight="bold")
+        ax1.tick_params(axis="x", rotation=30)
+        for bar in bars1:
+            ax1.annotate(f'{bar.get_height()}',
+                        xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha='center', va='bottom', fontsize=9)
+
+        # --- Gráfico 2: Servicios por modo de arranque ---
+        bars2 = ax2.bar(counts_startmode.keys(), counts_startmode.values(),
+                        color="#2ca02c", edgecolor="black")
+        ax2.set_title("Servicios por modo de arranque", fontsize=12, fontweight="bold")
+        ax2.tick_params(axis="x", rotation=30)
+        for bar in bars2:
+            ax2.annotate(f'{bar.get_height()}',
+                        xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha='center', va='bottom', fontsize=9)
+
+        # Mostrar en el frame
+        canvas = FigureCanvasTkAgg(fig, master=chart_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
 
     def show_files_chart(self, rows, chart_frame):
         counts = Counter([r.get("Mtime", "Sin fecha")[:10]
