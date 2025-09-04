@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 import pystray
 from utils.logger import log_action
 from utils.edr_utils import detect_config_file
+from utils.window_utils import top_focus
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -77,7 +78,7 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
             "WHERE NOT IsDir AND Size > 0 AND Mtime > now() - 30*24*60*60 "
             "AND Name =~ '(?i)\\.(py|exe|dll|bat|ps1|vbs|js|jar|cmd|msi|scr|com|doc|docx|xls|xlsx|ppt|pptx|pdf|rtf|txt|csv|zip|rar|7z|gz"
             "|tar|iso|img|bin|dat|cfg|ini|conf|xml|json|png|jpg|jpeg|gif|bmp|tiff|svg|mp3|wav|mp4|avi|mkv)$' "
-            "ORDER BY Mtime DESC LIMIT 200"
+            "ORDER BY Mtime DESC LIMIT 500"
         )
 
         # Inicializar pestañas
@@ -116,6 +117,16 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
             command=lambda: self.run_query(query, parent, chart_callback)
         )
         btn.pack(pady=5)
+        if label == "Archivos":
+            hash_btn = ctk.CTkButton(
+                frame,
+                text="Calcular hash del archivo seleccionado",
+                fg_color="#4CAF50",
+                hover_color="#45A049",
+                command=lambda: self.calculate_file_hash(parent)
+            )
+            hash_btn.pack(pady=5)
+
 
         # --- Frame para Treeview + Scrollbars ---
         tree_frame = ctk.CTkFrame(frame)
@@ -367,6 +378,65 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Error ejecutando consulta: {e}", parent=self)
 
+    def calculate_file_hash(self, tab):
+        tree = getattr(tab, "tree")
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Hash", "Selecciona un archivo primero.", parent=self)
+            return
+
+        # Obtener valores de la fila seleccionada
+        values = tree.item(selected[0], "values")
+        cols = tree["columns"]
+        row = dict(zip(cols, values))
+        filepath = row.get("OSPath")
+        filepath = filepath.replace("\\", "/")
+
+
+        if not filepath:
+            messagebox.showerror("Hash", "No se pudo obtener la ruta del archivo.", parent=self)
+            return
+
+        try:
+            # Query de Velociraptor para calcular hashes
+            query = f"SELECT hash(path=OSPath) AS Hashes FROM glob(globs='{filepath}')"
+            cmd = f'velociraptor query "{query}" --format jsonl'
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                encoding="utf-8",
+                text=True,
+                shell=True
+            )
+
+            output = result.stdout.strip().splitlines()
+            if not output:
+                messagebox.showinfo("Hash", "No se pudo calcular el hash.", parent=self)
+                return
+            hash_data = json.loads(output[0])['Hashes']
+
+            # Crear ventana emergente para mostrar y copiar hashes
+            hash_window = ctk.CTkToplevel(self)
+            top_focus(hash_window)
+            hash_window.title("Hashes del archivo")
+            hash_window.geometry("700x300")
+
+            msg = (
+                f"Archivo: {filepath}\n\n"
+                f"MD5: {hash_data.get('MD5')}\n"
+                f"SHA1: {hash_data.get('SHA1')}\n"
+                f"SHA256: {hash_data.get('SHA256')}"
+            )
+
+            # Campo de texto donde se puede seleccionar y copiar
+            text_box = ctk.CTkTextbox(hash_window, wrap="word", width=650, height=200)
+            text_box.insert("1.0", msg)
+            text_box.configure(state="disabled")
+            text_box.pack(padx=10, pady=10, fill="both", expand=True)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error calculando hash: {e}", parent=self)
 
 
     # === GRÁFICAS ===
