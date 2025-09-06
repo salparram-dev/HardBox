@@ -2,14 +2,9 @@
 import customtkinter as ctk
 from tkinter import messagebox, ttk
 import subprocess
-import threading
-import yaml
 import json
 from collections import Counter
-from PIL import Image, ImageDraw
-import pystray
 from utils.logger import log_action
-from utils.edr_utils import detect_config_file
 from utils.window_utils import top_focus
 
 from matplotlib.figure import Figure
@@ -36,10 +31,6 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         self.geometry("1600x800")
 
         VelociraptorServiceWindow._instance = self
-        self.server_process = None
-        self.client_process = None
-        self.running = False
-        self.tray_icon = None
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -47,20 +38,7 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # --- Pestaña servicio ---
-        self.tab_service = self.tabview.add("Servicio")
-        self.start_btn = ctk.CTkButton(self.tab_service, text="Iniciar Velociraptor",
-                                       fg_color="#4CAF50", hover_color="#45A049",
-                                       command=self.start_velociraptor)
-        self.start_btn.pack(pady=10)
-        self.stop_btn = ctk.CTkButton(self.tab_service, text="Detener Velociraptor",
-                                      fg_color="#f44336", hover_color="#e53935",
-                                      command=self.stop_velociraptor, state="disabled")
-        self.stop_btn.pack(pady=10)
-        self.url_label = ctk.CTkLabel(self.tab_service, text="Panel no disponible")
-        self.url_label.pack(pady=10)
-
-        # --- Pestañas consultas (Usuarios primero) ---
+        # --- Pestañas consultas  ---
         self.tab_users = self.tabview.add("Usuarios")
         self.tab_procs = self.tabview.add("Procesos")
         self.tab_conns = self.tabview.add("Conexiones")
@@ -163,123 +141,9 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
 
 
     def on_close(self):
-        if self.running:
-            if not messagebox.askyesno("Velociraptor en ejecución",
-                                       "Velociraptor sigue corriendo.\n¿Quieres detenerlo al cerrar la ventana?", parent=self):
-                self.withdraw()
-                self.show_in_tray()
-                return
-            else:
-                self.stop_velociraptor()
         VelociraptorServiceWindow._instance = None
         self.destroy()
-
-    def show_in_tray(self):
-        if self.tray_icon:
-            return
-        icon_img = Image.new("RGB", (64, 64), "green")
-        draw = ImageDraw.Draw(icon_img)
-        draw.ellipse((16, 16, 48, 48), fill="white")
-
-        def restore(icon, item):
-            self.deiconify()
-            self.tray_icon.stop()
-            self.tray_icon = None
-
-        def quit_app(icon, item):
-            if self.running:
-                self.stop_velociraptor()
-            self.tray_icon.stop()
-            self.tray_icon = None
-            VelociraptorServiceWindow._instance = None
-            self.destroy()
-
-        menu = pystray.Menu(
-            pystray.MenuItem("Restaurar ventana", restore),
-            pystray.MenuItem("Salir", quit_app)
-        )
-        self.tray_icon = pystray.Icon("Velociraptor", icon_img, "Velociraptor", menu)
-        threading.Thread(target=self.tray_icon.run, daemon=True).start()
-
-    def start_velociraptor(self):
-        try:
-            config_file = detect_config_file()
-            if not config_file:
-                messagebox.showerror("Error", "No se encontró archivo de configuración de Velociraptor.", parent=self)
-                return
-
-            # leer URL desde el config
-            try:
-                with open(config_file, "r", encoding="utf-8") as f:
-                    cfg = yaml.safe_load(f)
-                host = cfg.get("GUI", {}).get("bind_address", "127.0.0.1")
-                port = cfg.get("GUI", {}).get("bind_port", 8889)
-                url = f"http://{host}:{port}/"
-                self.url_label.configure(text=f"Panel web: {url}")
-            except Exception:
-                self.url_label.configure(text="No se pudo leer la URL del panel")
-
-            server_cmd = ["velociraptor", "frontend", "-c", config_file]
-            client_cmd = ["velociraptor", "client", "-c", config_file]
-
-            self.server_process = subprocess.Popen(
-                server_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-            self.client_process = subprocess.Popen(
-                client_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-            )
-
-            self.running = True
-            self.start_btn.configure(state="disabled")
-            self.stop_btn.configure(state="normal")
-
-            log_action("Velociraptor-Iniciar servicio", "velociraptor",
-                       {"success": True, "output": "Servidor y cliente iniciados"})
-            messagebox.showinfo("Velociraptor", "Servidor y cliente iniciados correctamente.", parent=self)
-
-            threading.Thread(target=self._log_output, daemon=True).start()
-
-        except Exception as e:
-            log_action("Velociraptor-Iniciar servicio", "velociraptor",
-                       {"success": False, "output": str(e)})
-            messagebox.showerror("Error", f"No se pudo iniciar Velociraptor:\n{e}", parent=self)
-
-    def _log_output(self):
-        for proc, name in [(self.server_process, "server"), (self.client_process, "client")]:
-            if proc:
-                for line in proc.stderr:
-                    print(f"[Velociraptor-{name}] {line.strip()}")
-
-    def stop_velociraptor(self):
-        try:
-            if self.server_process:
-                subprocess.run(["taskkill", "/PID", str(self.server_process.pid), "/T", "/F"])
-                self.server_process = None
-            if self.client_process:
-                subprocess.run(["taskkill", "/PID", str(self.client_process.pid), "/T", "/F"])
-                self.client_process = None
-
-            self.running = False
-            self.start_btn.configure(state="normal")
-            self.stop_btn.configure(state="disabled")
-            self.url_label.configure(text="Panel no disponible")
-
-            log_action("Velociraptor-Detener servicio", "velociraptor",
-                       {"success": True, "output": "Procesos terminados"})
-            messagebox.showinfo("Velociraptor", "Servidor y cliente detenidos.", parent=self)
-        except Exception as e:
-            log_action("Velociraptor-Detener servicio", "velociraptor",
-                       {"success": False, "output": str(e)})
-            messagebox.showerror("Error", f"No se pudo detener Velociraptor:\n{e}", parent=self)
-
+    
     def run_query(self, query: str, tab, chart_callback):
         """Ejecuta consultas VQL y muestra resultados en tabla y gráfica"""
         try:
@@ -354,7 +218,7 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
                     tree.heading(col, text=col_title)
                     tree.column(
                         col,
-                        width=current_widths.get(col, 500),
+                        width=current_widths.get(col, 650),
                         anchor="center"
                     )
 

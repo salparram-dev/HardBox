@@ -6,7 +6,6 @@ import tkinter.messagebox as messagebox
 import threading
 from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
-from gui.edr.edr_config_viewer import VelociraptorConfigWindow
 from gui.edr.edr_service_viewer import VelociraptorServiceWindow
 from utils.edr_utils import detect_config_file
 from utils.logger import log_action
@@ -37,15 +36,7 @@ class EDRWindow(ctk.CTkToplevel):
 
             ctk.CTkButton(
                 self,
-                text="Configurar Velociraptor",
-                command=self.open_config
-            ).pack(pady=5)
-
-            ctk.CTkButton(
-                self,
                 text="Gestionar servicio",
-                fg_color="#FF9800",
-                hover_color="#F57C00",
                 command=self.manage_service
             ).pack(pady=5)
 
@@ -112,11 +103,6 @@ class EDRWindow(ctk.CTkToplevel):
 
         # Lanzar en segundo plano para no congelar la UI
         threading.Thread(target=worker, daemon=True).start()
-
-    def open_config(self):
-        """Abre la ventana de configuración"""
-        win = VelociraptorConfigWindow(self)
-        top_focus(win)
 
     def manage_service(self):
         """Abre la ventana independiente de gestión de servicio Velociraptor"""
