@@ -2,11 +2,12 @@
 import customtkinter as ctk
 from tkinter import messagebox, ttk
 import subprocess
+import threading
 import json
 from collections import Counter
 from utils.logger import log_action
 from utils.window_utils import top_focus
-
+from utils.edr_utils import get_reputation
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -76,11 +77,26 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         style.map("Treeview", background=[("selected", "#1f6aa5")])
 
         # Consultas iniciales
-        self.after(500, lambda: self.run_query(users_query, self.tab_users, self.show_users_charts))
-        self.after(1000, lambda: self.run_query(process_query, self.tab_procs, self.show_process_charts))
-        self.after(1500, lambda: self.run_query(conn_query, self.tab_conns, self.show_conn_chart))
-        self.after(2000, lambda: self.run_query(serv_query, self.tab_services, self.show_service_charts))
-        self.after(2500, lambda: self.run_query(files_query, self.tab_files, self.show_files_chart))
+        self.after(500, lambda: (
+            log_action("Velociraptor-Inicializar Usuarios", "velociraptor", {"success": True, "output": "Usuarios inicializados"}),
+            self.run_query(users_query, self.tab_users, self.show_users_charts)
+        ))
+        self.after(1000, lambda: (
+            log_action("Velociraptor-Inicializar Procesos", "velociraptor", {"success": True, "output": "Procesos inicializados"}),
+            self.run_query(process_query, self.tab_procs, self.show_process_charts)
+        ))
+        self.after(1500, lambda: (
+            log_action("Velociraptor-Inicializar Conexiones", "velociraptor", {"success": True, "output": "Conexiones inicializadas"}),
+            self.run_query(conn_query, self.tab_conns, self.show_conn_chart)
+        ))
+        self.after(2000, lambda: (
+            log_action("Velociraptor-Inicializar Servicios", "velociraptor", {"success": True, "output": "Servicios inicializados"}),
+            self.run_query(serv_query, self.tab_services, self.show_service_charts)
+        ))
+        self.after(2500, lambda: (
+            log_action("Velociraptor-Inicializar Archivos", "velociraptor", {"success": True, "output": "Archivos inicializados"}),
+            self.run_query(files_query, self.tab_files, self.show_files_chart)
+        ))
 
     # ---------------- MÉTODOS AUXILIARES ----------------
     def _init_query_tab(self, parent, label, query, chart_callback):
@@ -90,21 +106,45 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         btn = ctk.CTkButton(
             frame,
             text=f"Refrescar {label}",
-            fg_color="#2196F3",
-            hover_color="#1976D2",
-            command=lambda: self.run_query(query, parent, chart_callback)
+            command=lambda: (
+                log_action(f"Velociraptor-Refrescar {label}", "velociraptor", {"success": True, "output": f"Refresco de {label}"}),
+                self.run_query(query, parent, chart_callback)
+            )
         )
         btn.pack(pady=5)
+
         if label == "Archivos":
             hash_btn = ctk.CTkButton(
                 frame,
                 text="Calcular hash del archivo seleccionado",
-                fg_color="#4CAF50",
-                hover_color="#45A049",
                 command=lambda: self.calculate_file_hash(parent)
             )
             hash_btn.pack(pady=5)
 
+        # --- Barra de filtros ---
+        filter_frame = ctk.CTkFrame(frame)
+        filter_frame.pack(fill="x", pady=5)
+
+        filter_entry = ctk.CTkEntry(filter_frame, placeholder_text="Filtrar...")
+        filter_entry.pack(side="left", fill="x", expand=True, padx=5)
+
+        filter_btn = ctk.CTkButton(
+            filter_frame,
+            text="Aplicar",
+            fg_color="#4CAF50",
+            hover_color="#45A049",
+            command=lambda e=filter_entry: self.apply_filter(parent, e.get())
+        )
+        filter_btn.pack(side="left", padx=5)
+
+        clear_btn = ctk.CTkButton(
+            filter_frame,
+            text="Limpiar",
+            fg_color="#f44336",
+            hover_color="#d32f2f",
+            command=lambda e=filter_entry: self.apply_filter(parent, "")
+        )
+        clear_btn.pack(side="left")
 
         # --- Frame para Treeview + Scrollbars ---
         tree_frame = ctk.CTkFrame(frame)
@@ -138,11 +178,47 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         chart_frame.pack(fill="both", expand=True, pady=5)
         setattr(parent, "chart_frame", chart_frame)
 
-
-
     def on_close(self):
         VelociraptorServiceWindow._instance = None
         self.destroy()
+
+    def apply_filter(self, tab, text):
+        """Filtra y reordena las filas del Treeview en función del texto"""
+        tree = getattr(tab, "tree")
+        items = list(tree.get_children())
+        if not items:
+            return
+
+        # Si no hay filtro → resetear estilo y mantener orden actual
+        if not text:
+            for item in items:
+                tree.item(item, tags=())
+            return
+
+        text = text.lower()
+        matches, nomatches = [], []
+
+        # Separar coincidencias
+        for item in items:
+            values = [str(v).lower() for v in tree.item(item, "values")]
+            if any(text in v for v in values):
+                matches.append(item)
+            else:
+                nomatches.append(item)
+
+        # Reordenar: coincidencias primero
+        for item in matches + nomatches:
+            tree.move(item, "", "end")
+
+        # Colorear
+        for item in matches:
+            tree.item(item, tags=("match",))
+        for item in nomatches:
+            tree.item(item, tags=("nomatch",))
+
+        tree.tag_configure("match", background="#2b2b2b", foreground="white")
+        tree.tag_configure("nomatch", background="#555555", foreground="#888888")
+
     
     def run_query(self, query: str, tab, chart_callback):
         """Ejecuta consultas VQL y muestra resultados en tabla y gráfica"""
@@ -279,6 +355,7 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
                 messagebox.showinfo("Hash", "No se pudo calcular el hash.", parent=self)
                 return
             hash_data = json.loads(output[0])['Hashes']
+            sha256_hash = hash_data.get('SHA256')
 
             # Crear ventana emergente para mostrar y copiar hashes
             hash_window = ctk.CTkToplevel(self)
@@ -286,11 +363,13 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
             hash_window.title("Hashes del archivo")
             hash_window.geometry("700x300")
 
+            # Mensaje inicial
             msg = (
                 f"Archivo: {filepath}\n\n"
                 f"MD5: {hash_data.get('MD5')}\n"
                 f"SHA1: {hash_data.get('SHA1')}\n"
-                f"SHA256: {hash_data.get('SHA256')}"
+                f"SHA256: {sha256_hash}\n"
+                f"Consultando reputación en VirusTotal..."
             )
 
             # Campo de texto donde se puede seleccionar y copiar
@@ -299,7 +378,28 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
             text_box.configure(state="disabled")
             text_box.pack(padx=10, pady=10, fill="both", expand=True)
 
+            # Función que se ejecutará en segundo plano
+            def fetch_vt():
+                vt_info = get_reputation(sha256_hash)
+                # Actualizar la UI en el hilo principal
+                text_box.configure(state="normal")
+                text_box.delete("1.0", "end")
+                text_box.insert("1.0",
+                    f"Archivo: {filepath}\n\n"
+                    f"MD5: {hash_data.get('MD5')}\n"
+                    f"SHA1: {hash_data.get('SHA1')}\n"
+                    f"SHA256: {sha256_hash}\n\n"
+                    f"{vt_info}"
+                )
+                text_box.configure(state="disabled")
+
+            log_action("Velociraptor-Hash", "velociraptor", {"success": True, "output": f"Resultado de los hashes de {filepath}: {hash_data}"})
+
+            # Lanzar el hilo
+            threading.Thread(target=fetch_vt, daemon=True).start()
+
         except Exception as e:
+            log_action("Velociraptor-Hash", "velociraptor", {"success": False, "output": "No se puedieron obtener los hashes"})
             messagebox.showerror("Error", f"Error calculando hash: {e}", parent=self)
 
 

@@ -1,13 +1,11 @@
 # gui/edr/edr_viewer.py
 import customtkinter as ctk
 import os
-import shutil
 import tkinter.messagebox as messagebox
 import threading
 from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
 from gui.edr.edr_service_viewer import VelociraptorServiceWindow
-from utils.edr_utils import detect_config_file
 from utils.logger import log_action
 from utils.window_utils import top_focus
 
@@ -65,37 +63,10 @@ class EDRWindow(ctk.CTkToplevel):
             log_action("Velociraptor-Instalar", ps1_path, result)
 
             if result["success"]:
-                install_dir = detect_config_file()
-                default_config = os.path.join(install_dir, "client.config.yaml")
-                custom_config = os.path.join("resources", "server.config.yaml")
-
-                try:
-                    if os.path.exists(custom_config):
-                        # Eliminar el config generado por el instalador
-                        if os.path.exists(default_config):
-                            os.remove(default_config)
-
-                        # Copiar el personalizado en su lugar
-                        shutil.copy(custom_config, install_dir)
-
-                        self.after(0, lambda: messagebox.showinfo(
-                            "Instalación",
-                            f"Velociraptor instalado correctamente.\n"
-                            f"Se eliminó el client.config.yaml y se reemplazó con {custom_config}"
-                        ))
-                    else:
-                        self.after(0, lambda: messagebox.showwarning(
-                            "Configuración",
-                            "Velociraptor instalado, pero no se encontró el archivo "
-                            "resources/server.config.yaml. Se mantiene el default."
-                        ))
-                        
-                except Exception as e:
-                    self.after(0, lambda: messagebox.showerror(
-                        "Error",
-                        f"Error al reemplazar la configuración: {e}"
-                    ))
-
+                self.after(0, lambda: messagebox.showinfo(
+                    "Instalación",
+                    f"Velociraptor instalado correctamente.\n"
+                ))
                 # Recargar ventana
                 self.after(0, lambda: (self.destroy(), EDRWindow(self.master)))
             else:
