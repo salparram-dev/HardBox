@@ -2,39 +2,42 @@
 # Establece configuraciones seguras de contraseña según CCN-STIC-599
 
 param(
-    [switch]$ForceBackup
+    [switch]$ForceBackup,
+    [int]$MinimumPasswordLength = 10,
+    [int]$PasswordComplexity = 1,
+    [int]$MaximumPasswordAge = 60,
+    [int]$MinimumPasswordAge = 1,
+    [int]$PasswordHistorySize = 10,
+    [int]$LockoutBadCount = 5,
+    [int]$ResetLockoutCount = 15,
+    [int]$LockoutDuration = 15
 )
 
-# Importar utilidades de backup
+# Importar utils y hacer backup como ya lo tienes
 . (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "sec_backup.inf" -ForceBackup:$ForceBackup
-
-$backupPath = Get-BackupPath
-$infFile    = Join-Path (Split-Path $backupPath -Parent) "ccn_hardening.inf"
-
-# Guardar backup si procede
 Create-SeceditBackup
 
-# Configuración endurecida
+# Usar las variables en el INF
 $lines = @(
     "[Unicode]",
     "Unicode=yes",
     "",
     "[System Access]",
-    "MinimumPasswordLength = 10",
-    "PasswordComplexity = 1",
-    "MaximumPasswordAge = 60",
-    "MinimumPasswordAge = 1",
-    "PasswordHistorySize = 10",
-    "LockoutBadCount = 5",
-    "ResetLockoutCount = 15",
-    "LockoutDuration = 15",
+    "MinimumPasswordLength = $MinimumPasswordLength",
+    "PasswordComplexity = $PasswordComplexity",
+    "MaximumPasswordAge = $MaximumPasswordAge",
+    "MinimumPasswordAge = $MinimumPasswordAge",
+    "PasswordHistorySize = $PasswordHistorySize",
+    "LockoutBadCount = $LockoutBadCount",
+    "ResetLockoutCount = $ResetLockoutCount",
+    "LockoutDuration = $LockoutDuration",
     "",
     "[Version]",
     'signature="$CHICAGO$"',
     "Revision=1"
 )
 
+# Guardar y aplicar
+$infFile = Join-Path (Split-Path (Get-BackupPath) -Parent) "ccn_hardening.inf"
 Set-Content -Path $infFile -Value $lines -Encoding Unicode -Force
-
-# Aplicar configuración
-secedit /configure /db (Join-Path (Split-Path $backupPath -Parent) "secedit.sdb") /cfg $infFile /areas SECURITYPOLICY
+secedit /configure /db (Join-Path (Split-Path (Get-BackupPath) -Parent) "secedit.sdb") /cfg $infFile /areas SECURITYPOLICY

@@ -11,7 +11,7 @@ try {
         foreach ($item in $config) {
             Set-NetFirewallProfile -Profile $item.Name -Enabled $item.Enabled -DefaultInboundAction $item.Inbound -DefaultOutboundAction $item.Outbound
         }
-        Write-Output "Cambios de firewall revertidos correctamente."
+        Write-Output "Cambios del firewall revertidos correctamente."
     } else {
         Write-Output "Archivo de backup no encontrado."
     }

@@ -22,11 +22,12 @@ import os
 from PIL import Image
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
+from gui.parameter_form import ParameterForm
 from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
 from gui.edr.edr_viewer import EDRWindow
 from gui.ids.ids_viewer import IDSWindow
-from gui.sections import SECTIONS, BACKUPS, DESCRIPTIONS, IMAGES
+from gui.sections import SECTIONS, BACKUPS, DESCRIPTIONS, PARAMETERS, IMAGES
 from utils.window_utils import top_focus
 
 SCRIPT_PATH = "scripts/powershell"
@@ -46,24 +47,24 @@ class HardBoxApp:
         # --- Navegación superior con SegmentedButton ---
         self.top_nav = ctk.CTkSegmentedButton(
             self.root,
-            values=["🛡️ EDR", "🔍 IDS", "⚙ Acciones"],
+            values=["🛡️ EDR", "🔍 IDS", "📜 Acciones"],
             command=self.handle_top_nav,
             width=500
         )
         self.top_nav.place(relx=1.0, rely=0.0, x=-20, y=10, anchor="ne")
-        #self.top_nav.set("⚙ Acciones")  # por defecto
-
 
         for section_name, script_name in SECTIONS:
             self.add_section(section_name, script_name)
     
     def handle_top_nav(self, choice):
-        if choice == "⚙ Acciones":
+        if choice == "📜 Acciones":
             self.open_logs()
         elif choice == "🔍 IDS":
-            self.open_ids()
+             if messagebox.askyesno("Opciones avanzadas", "Esta sección es para usuarios avanzados. ¿Quieres continuar?"):
+                self.open_ids()
         elif choice == "🛡️ EDR":
-            self.open_edr()
+            if messagebox.askyesno("Opciones avanzadas", "Esta sección es para usuarios avanzados. ¿Quieres continuar?"):
+                self.open_edr()
 
     def open_logs(self):
         win = LogViewerWindow(self.root)
@@ -123,33 +124,68 @@ class HardBoxApp:
         ps1_path = os.path.join(SCRIPT_PATH, mode, f"{base_name}.ps1")
         result = None
 
-        if mode == "apply":
-            backup_path = BACKUPS.get(base_name, "")
+        def execute_with_params(params_dict):
+            # Construir lista de parámetros para PowerShell
+            ps_params = []
+            for k, v in params_dict.items():
+                ps_params.extend([f"-{k}", str(v)])
 
+            # Comprobar backup
+            backup_path = BACKUPS.get(base_name, "")
             if os.path.exists(backup_path):
                 overwrite = messagebox.askyesno(
                     "Backup existente",
                     f"Ya existe un backup en:\n{backup_path}\n\n¿Quieres sobrescribirlo con uno nuevo?"
                 )
-                params = ["-ForceBackup"] if overwrite else None
-                result = run_powershell(ps1_path, params)
-            else:
-                result = run_powershell(ps1_path)
+                if overwrite:
+                    ps_params.append("-ForceBackup")
 
-            log_action("Aplicar", ps1_path, result)
+            # Ejecutar script con parámetros
+            result_local = run_powershell(ps1_path, ps_params)
+            log_action("Aplicar", ps1_path, result_local)
+
+            # Mostrar resultado
+            if result_local.get("success"):
+                messagebox.showinfo("Éxito", "Los cambios se aplicaron con éxito.")
+            else:
+                messagebox.showerror("Error", "Error al aplicar los cambios.")
+
+        if mode == "apply":
+            # Si la sección tiene parámetros configurables, abrir formulario
+            if base_name in PARAMETERS:
+                ParameterForm(self.root, base_name, PARAMETERS[base_name], execute_with_params, sections_list=SECTIONS)
+            else:
+                # Comportamiento actual sin formulario
+                backup_path = BACKUPS.get(base_name, "")
+                if os.path.exists(backup_path):
+                    overwrite = messagebox.askyesno(
+                        "Backup existente",
+                        f"Ya existe un backup en:\n{backup_path}\n\n¿Quieres sobrescribirlo con uno nuevo?"
+                    )
+                    params = ["-ForceBackup"] if overwrite else None
+                    result = run_powershell(ps1_path, params)
+                else:
+                    result = run_powershell(ps1_path)
+
+                log_action("Aplicar", ps1_path, result)
+
+                if result.get("success"):
+                    messagebox.showinfo("Éxito", "Los cambios se aplicaron con éxito.")
+                else:
+                    messagebox.showerror("Error", "Error al aplicar los cambios.")
 
         elif mode == "revert":
             result = run_powershell(ps1_path)
             log_action("Revertir", ps1_path, result)
 
-        # Mostrar resultado
-        if result.get("success"):
-            messagebox.showinfo("Éxito", "Los cambios se aplicaron con éxito.")
-        else:
-            messagebox.showerror("Error", "Error al aplicar los cambios.")
+            if result.get("success"):
+                messagebox.showinfo("Éxito", "Los cambios se aplicaron con éxito.")
+            else:
+                messagebox.showerror("Error", "Error al aplicar los cambios.")
 
 
 if __name__ == "__main__":
     root = ctk.CTk()
+    #root.iconbitmap("./assets/images/HARDBOX.ico")
     app = HardBoxApp(root)
     root.mainloop()
