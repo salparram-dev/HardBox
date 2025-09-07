@@ -26,7 +26,7 @@ from utils.logger import log_action
 from gui.log_viewer import LogViewerWindow
 from gui.edr.edr_viewer import EDRWindow
 from gui.ids.ids_viewer import IDSWindow
-from gui.sections import SECTIONS, DESCRIPTIONS, IMAGES
+from gui.sections import SECTIONS, BACKUPS, DESCRIPTIONS, IMAGES
 from utils.window_utils import top_focus
 
 SCRIPT_PATH = "scripts/powershell"
@@ -121,16 +121,33 @@ class HardBoxApp:
 
     def run_script(self, mode, base_name):
         ps1_path = os.path.join(SCRIPT_PATH, mode, f"{base_name}.ps1")
-        result = run_powershell(ps1_path)
+        result = None
+
         if mode == "apply":
+            backup_path = BACKUPS.get(base_name, "")
+
+            if os.path.exists(backup_path):
+                overwrite = messagebox.askyesno(
+                    "Backup existente",
+                    f"Ya existe un backup en:\n{backup_path}\n\n¿Quieres sobrescribirlo con uno nuevo?"
+                )
+                params = ["-ForceBackup"] if overwrite else None
+                result = run_powershell(ps1_path, params)
+            else:
+                result = run_powershell(ps1_path)
+
             log_action("Aplicar", ps1_path, result)
+
         elif mode == "revert":
+            result = run_powershell(ps1_path)
             log_action("Revertir", ps1_path, result)
 
-        if result["success"]:
-            messagebox.showinfo("Éxito", result["output"])
+        # Mostrar resultado
+        if result.get("success"):
+            messagebox.showinfo("Éxito", "Los cambios se aplicaron con éxito.")
         else:
-            messagebox.showerror("Error", result["output"])
+            messagebox.showerror("Error", "Error al aplicar los cambios.")
+
 
 if __name__ == "__main__":
     root = ctk.CTk()

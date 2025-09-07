@@ -1,21 +1,24 @@
 # scripts/powershell/revert/defender.ps1
 # Restaura valores originales de Microsoft Defender desde backup
 
-$backupPath = "C:\\windows\\temp\\defender_state_backup.json"
+# Importar utilidades de backup (subir desde revert hasta TFM\utils)
+. (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "defender_state_backup.json"
+
+$backupPath = Get-BackupPath
 
 try {
     if (Test-Path $backupPath) {
         $original = Get-Content $backupPath | ConvertFrom-Json
 
-        Set-MpPreference -DisableRealtimeMonitoring $original.DisableRealtimeMonitoring
+        Set-MpPreference -DisableRealtimeMonitoring $original.DisableRealtimeMonitoring # Si estaba a True saldrá en False por motivos de seguridad de Microsoft
         Set-MpPreference -MAPSReporting $original.MAPSReporting
         Set-MpPreference -SubmitSamplesConsent $original.SubmitSamplesConsent
         Set-MpPreference -PUAProtection $original.PUAProtection
 
-        Write-Output "Configuración de Microsoft Defender restaurada desde backup."
     } else {
-        Write-Output "No se encontró el backup de configuración previa."
+        Write-Output  "No se ha encontrado backup en $backupPath"
     }
 } catch {
-    Write-Output "Error al revertir la configuración de Defender: $_"
+    Write-Output "Error al revertir: $_"
 }
+

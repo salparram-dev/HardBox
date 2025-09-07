@@ -1,14 +1,19 @@
 # scripts/powershell/revert/auditing.ps1
 # Restaura las políticas de auditoría desde el backup
 
+# Importar utilidades de backup
+. (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "audit_backup.csv"
+
+$backupPath = Get-BackupPath
+
 try {
-    $backupPath = "C:\Windows\Temp\audit_backup.csv"
     if (Test-Path $backupPath) {
         auditpol /restore /file:$backupPath
-        Write-Output "Configuración de auditoría restaurada desde backup."
+        Write-Output "Cambios revertidos desde backup."
     } else {
-        Write-Output "No se encontró el archivo de backup de auditoría."
+        Write-Output "No se ha encontrado el archivo de backup."
     }
 } catch {
-    Write-Output "Error al restaurar configuración de auditoría: $_"
+    Write-Output "Error al restaurar: $_"
 }
+

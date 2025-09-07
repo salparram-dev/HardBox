@@ -10,6 +10,13 @@ SECTIONS = [
     ("Cortafuegos", "firewall"),
 ]
 
+BACKUPS = {
+    "local_security": "C:/ProgramData/HardBoxBackup/sec_backup.inf",
+    "services": "C:/ProgramData/HardBoxBackup/services_state_backup.json",
+    "defender": "C:/ProgramData/HardBoxBackup/defender_state_backup.json",
+    "auditing" : "C:/ProgramData/HardBoxBackup/audit_backup.csv"
+}
+
 DESCRIPTIONS = {
     "local_security": "Refuerza las reglas de contraseñas: mínimo de caracteres, complejidad, historial y bloqueo tras intentos fallidos.",
     "services": "Desactiva servicios innecesarios para reducir riesgos de seguridad sin afectar el uso diario.",

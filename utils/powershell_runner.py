@@ -3,24 +3,36 @@
 import subprocess
 import os
 
-def run_powershell(script_path: str) -> dict:
+def run_powershell(script_path: str, params: list = None) -> dict:
     if not os.path.exists(script_path):
         return {"success": False, "output": f"Script no encontrado: {script_path}"}
+    
+    cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path]
+    if params:
+        cmd.extend(params)
 
     try:
         completed = subprocess.run(
-            ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path],
+            cmd,
             capture_output=True,
             text=True,
             timeout=120,
+            encoding="cp850",
             check=True
         )
+        stdout = (completed.stdout or "").strip()
+        stderr = (completed.stderr or "").strip()
         return {
             "success": True,
-            "output": completed.stdout.strip() or "Script ejecutado correctamente."
+            "output": stdout or stderr or "Script ejecutado correctamente."
         }
     except subprocess.CalledProcessError as e:
-        return {"success": False, "output": e.stderr.strip() or "Error al ejecutar el script."}
+        stdout = (e.stdout or "").strip()
+        stderr = (e.stderr or "").strip()
+        return {
+            "success": False,
+            "output": stdout or stderr or "Error al ejecutar el script."
+        }
     except subprocess.TimeoutExpired:
         return {"success": False, "output": "Timeout: El script tardó demasiado en completarse."}
 

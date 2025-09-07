@@ -1,7 +1,14 @@
 # scripts/powershell/revert/services.ps1
 # Restaura el estado exacto de los servicios modificados
 
-$backupPath = "C:\\windows\\temp\\services_state_backup.json"
+# Sube tres niveles desde la carpeta actual del script y entra en utils
+$utilsPath = Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1' | Resolve-Path
+
+# Importa el script de utilidades
+. $utilsPath -BackupName "services_state_backup.json" -ForceBackup:$ForceBackup
+
+
+$backupPath = Get-BackupPath
 
 if (Test-Path $backupPath) {
     $states = Get-Content $backupPath | ConvertFrom-Json
@@ -20,5 +27,6 @@ if (Test-Path $backupPath) {
         }
     }
 } else {
-    Write-Output "No se encontró backup en $backupPath"
+    Write-Output "No se ha encontrado backup en $backupPath"
 }
+

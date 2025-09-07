@@ -1,38 +1,47 @@
 # scripts/powershell/apply/local_security.ps1
 # Establece configuraciones seguras de contraseña según CCN-STIC-599
 
-try {
-    $backup = "C:\\windows\\temp\\sec_backup.inf"
-    if (!(Test-Path $backup)) {
-        secedit /export /cfg $backup # Exportar la configuración actual
-    }
+param(
+    [switch]$ForceBackup
+)
 
-    $lines = @(
-        "[Unicode]",
-        "Unicode=yes",
-        "",
-        "[System Access]",
-        "MinimumPasswordLength = 10",
-        "PasswordComplexity = 1",
-        "MaximumPasswordAge = 60",
-        "MinimumPasswordAge = 1",
-        "PasswordHistorySize = 10",
-        "LockoutBadCount = 5",
-        "ResetLockoutCount = 15",
-        "LockoutDuration = 15",
-        "",
-        "[Version]",
-        'signature="$CHICAGO$"',
-        "Revision=1"
+$backupDir  = "$env:ProgramData\HardBoxBackup"
+$backupFile = Join-Path $backupDir "sec_backup.inf"
+$infFile    = Join-Path $backupDir "ccn_hardening.inf"
 
-    )
-
-    $path = "C:\\windows\\temp\\ccn_hardening.inf"
-    Set-Content -Path $path -Value $lines -Encoding Unicode
-
-    secedit /configure /db secedit.sdb /cfg $path /areas SECURITYPOLICY
-
-    Write-Output "Configuración de seguridad local aplicada con éxito."
-} catch {
-    Write-Output "Error aplicando configuración: $_"
+# Crear carpeta segura si no existe
+if (-not (Test-Path $backupDir)) {
+    New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
+    icacls $backupDir /inheritance:r /grant:r "Administrators:F" | Out-Null
 }
+
+# Exportar configuración actual solo si no hay backup o si se fuerza
+if ($ForceBackup -or -not (Test-Path $backupFile)) {
+    secedit /export /cfg $backupFile
+}
+
+# Configuración endurecida
+$lines = @(
+    "[Unicode]",
+    "Unicode=yes",
+    "",
+    "[System Access]",
+    "MinimumPasswordLength = 10",
+    "PasswordComplexity = 1",
+    "MaximumPasswordAge = 60",
+    "MinimumPasswordAge = 1",
+    "PasswordHistorySize = 10",
+    "LockoutBadCount = 5",
+    "ResetLockoutCount = 15",
+    "LockoutDuration = 15",
+    "",
+    "[Version]",
+    'signature="$CHICAGO$"',
+    "Revision=1"
+)
+
+Set-Content -Path $infFile -Value $lines -Encoding Unicode -Force
+
+# Aplicar configuración
+secedit /configure /db "$backupDir\secedit.sdb" /cfg $infFile /areas SECURITYPOLICY
+
