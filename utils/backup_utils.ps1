@@ -16,6 +16,18 @@ function Get-BackupPath {
     return Join-Path $backupDir $BackupName
 }
 
+function Create-SeceditBackup {
+    $path = Get-BackupPath
+    if ($ForceBackup -or -not (Test-Path $path)) {
+        if ($ForceBackup -and (Test-Path $path)) {
+            Remove-Item $path -Force
+        }
+        # Ejecutar secedit con comillas y esperar a que termine
+        Start-Process -FilePath "secedit.exe" -ArgumentList "/export", "/cfg", "`"$path`"" -Wait -NoNewWindow
+    }
+}
+
+
 function Create-JsonBackup($data) {
     $path = Get-BackupPath
     if ($ForceBackup -or -not (Test-Path $path)) {

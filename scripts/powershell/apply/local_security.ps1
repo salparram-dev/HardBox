@@ -5,20 +5,14 @@ param(
     [switch]$ForceBackup
 )
 
-$backupDir  = "$env:ProgramData\HardBoxBackup"
-$backupFile = Join-Path $backupDir "sec_backup.inf"
-$infFile    = Join-Path $backupDir "ccn_hardening.inf"
+# Importar utilidades de backup
+. (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "sec_backup.inf" -ForceBackup:$ForceBackup
 
-# Crear carpeta segura si no existe
-if (-not (Test-Path $backupDir)) {
-    New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
-    icacls $backupDir /inheritance:r /grant:r "Administrators:F" | Out-Null
-}
+$backupPath = Get-BackupPath
+$infFile    = Join-Path (Split-Path $backupPath -Parent) "ccn_hardening.inf"
 
-# Exportar configuración actual solo si no hay backup o si se fuerza
-if ($ForceBackup -or -not (Test-Path $backupFile)) {
-    secedit /export /cfg $backupFile
-}
+# Guardar backup si procede
+Create-SeceditBackup
 
 # Configuración endurecida
 $lines = @(
@@ -43,5 +37,4 @@ $lines = @(
 Set-Content -Path $infFile -Value $lines -Encoding Unicode -Force
 
 # Aplicar configuración
-secedit /configure /db "$backupDir\secedit.sdb" /cfg $infFile /areas SECURITYPOLICY
-
+secedit /configure /db (Join-Path (Split-Path $backupPath -Parent) "secedit.sdb") /cfg $infFile /areas SECURITYPOLICY
