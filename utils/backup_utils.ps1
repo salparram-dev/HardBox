@@ -22,15 +22,13 @@ function Create-JsonBackup($data) {
         $data | ConvertTo-Json | Set-Content -Path $path -Encoding UTF8
     }
 }
-function Create-FileBackup($command) {
-    $path = Get-BackupPath
+function Create-FileBackup($path, $command) {
     if ($ForceBackup -or -not (Test-Path $path)) {
-        if ($ForceBackup -and -not (Test-Path $path)) {
+        if ($ForceBackup -and (Test-Path $path)) {
             Remove-Item $path -Force
         }
-        & $command
+        & $command $path
     }
 }
-
 
 Ensure-BackupDir

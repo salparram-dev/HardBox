@@ -14,7 +14,9 @@ BACKUPS = {
     "local_security": "C:/ProgramData/HardBoxBackup/sec_backup.inf",
     "services": "C:/ProgramData/HardBoxBackup/services_state_backup.json",
     "defender": "C:/ProgramData/HardBoxBackup/defender_state_backup.json",
-    "auditing" : "C:/ProgramData/HardBoxBackup/audit_backup.csv"
+    "auditing" : "C:/ProgramData/HardBoxBackup/audit_backup.csv",
+    "usb": "C:/ProgramData/HardBoxBackup/usb_backup.json",
+    "firewall": "C:/ProgramData/HardBoxBackup/firewall_backup.json", 
 }
 
 DESCRIPTIONS = {

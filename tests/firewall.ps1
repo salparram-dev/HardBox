@@ -1,2 +1,1 @@
-Get-NetFirewallProfile | Select-Object Name, Enabled
-Get-NetFirewallProfile | Select-Object Name, DefaultInboundAction, DefaultOutboundAction
+Get-NetFirewallProfile | Select-Object Name, Enabled, DefaultInboundAction, DefaultOutboundAction

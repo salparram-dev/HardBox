@@ -1,17 +1,22 @@
 # scripts/powershell/apply/usb.ps1
 # Desactiva el uso de USBSTOR (CCN-STIC-599)
-try {
-    $regPath = "HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR"
-    $backupPath = "C:\Windows\Temp\usb_backup.json"
+param(
+    [switch]$ForceBackup
+)
 
-    if (-not (Test-Path $backupPath)) {
-        $startVal = Get-ItemProperty -Path "Registry::$regPath" -Name "Start" | Select-Object -ExpandProperty Start
-        $startVal | ConvertTo-Json | Set-Content -Path $backupPath -Encoding UTF8
-    }
+# Importar utilidades de backup
+. (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "usb_backup.json" -ForceBackup:$ForceBackup
 
-    Set-ItemProperty -Path "Registry::$regPath" -Name "Start" -Value 4 # Valor 4 = Bloqueo
+$regPath = "HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR"
 
-    Write-Output "Control USB aplicado: almacenamiento USB deshabilitado."
-} catch {
-    Write-Output "Error aplicando control USB: $_"
-}
+# Obtener valor actual
+$startVal = Get-ItemProperty -Path "Registry::$regPath" -Name "Start" | Select-Object -ExpandProperty Start
+
+# Guardar backup si procede
+Create-JsonBackup $startVal
+
+# Aplicar bloqueo (valor 4 = deshabilitado)
+Set-ItemProperty -Path "Registry::$regPath" -Name "Start" -Value 4
+
+Write-Output "Control USB aplicado: almacenamiento USB deshabilitado."
+

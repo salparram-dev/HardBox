@@ -9,7 +9,12 @@ param(
 . (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "audit_backup.csv" -ForceBackup:$ForceBackup
 
 # Guardar backup si procede (auditpol CSV)
-Create-FileBackup { auditpol /backup /file:$(Get-BackupPath) }
+$backupPath = Get-BackupPath
+
+Create-FileBackup $backupPath {
+    param($dest)
+    auditpol /backup /file:"$dest"
+}
 
 # Configuración endurecida de auditoría
 $auditSettings = @{
@@ -27,5 +32,3 @@ $auditSettings = @{
 $auditSettings.Keys | ForEach-Object {
     auditpol /set /subcategory:$_ /success:enable /failure:enable | Out-Null
 }
-
-Write-Output "Auditoría endurecida aplicada correctamente."

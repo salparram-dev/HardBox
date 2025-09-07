@@ -1,9 +1,12 @@
 # scripts/powershell/revert/usb.ps1
 # Restaura la configuración uso de USBSTOR desde el backup
-try {
-    $regPath = "HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR"
-    $backupPath = "C:\Windows\Temp\usb_backup.json"
+# Importar utilidades de backup
+. (Join-Path $PSScriptRoot '..\..\..\utils\backup_utils.ps1') -BackupName "usb_backup.json"
 
+$regPath = "HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR"
+$backupPath = Get-BackupPath
+
+try {
     if (Test-Path $backupPath) {
         $originalVal = Get-Content -Path $backupPath | ConvertFrom-Json
         Set-ItemProperty -Path "Registry::$regPath" -Name "Start" -Value $originalVal
@@ -14,3 +17,4 @@ try {
 } catch {
     Write-Output "Error revirtiendo control USB: $_"
 }
+
