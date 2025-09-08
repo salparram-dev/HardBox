@@ -7,7 +7,7 @@ from PIL import Image
 from utils.powershell_runner import run_powershell, run_command
 from gui.edr.edr_service_viewer import VelociraptorServiceWindow
 from utils.logger import log_action
-from utils.window_utils import top_focus
+from utils.window_utils import top_focus, ensure_icon
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -78,6 +78,7 @@ class EDRWindow(ctk.CTkToplevel):
     def manage_service(self):
         """Abre la ventana independiente de gestión de servicio Velociraptor"""
         win = VelociraptorServiceWindow.open() 
+        ensure_icon(win)
         top_focus(win)
 
     def show_info(self):

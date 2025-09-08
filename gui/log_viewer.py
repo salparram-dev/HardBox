@@ -5,6 +5,7 @@ import json
 import csv
 import os
 from tkinter import messagebox
+from utils.window_utils import set_icon
 
 LOG_FILE = "logs/hardbox_actions.log"
 

@@ -4,6 +4,7 @@ from tkinter import messagebox, ttk
 import subprocess
 import threading
 import json
+from datetime import datetime
 from collections import Counter
 from utils.logger import log_action
 from utils.window_utils import top_focus
@@ -52,13 +53,17 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         conn_query = "SELECT Laddr.IP,Laddr.Port,Raddr.IP,Raddr.Port,Status,TypeString FROM netstat()"
         serv_query = ("SELECT Name,DisplayName,State,StartMode "
                       "FROM wmi(query='SELECT Name, DisplayName, State, StartMode FROM Win32_Service', namespace='root/CIMV2')")
+
         files_query = (
-            "SELECT Name, Mtime, OSPath FROM glob(globs='C:\\\\Users\\\\**', accessor='file') "
-            "WHERE NOT IsDir AND Size > 0 AND Mtime > now() - 30*24*60*60 "
+            "SELECT Name, Mtime, Size, OSPath "
+            "FROM glob(globs='C:\\\\Users\\\\**', accessor='file') "
+            "WHERE NOT IsDir "
+            "AND Size > 0 "
+            "AND Mtime > now() - 7*24*60*60 "
             "AND Name =~ '(?i)\\.(py|exe|dll|bat|ps1|vbs|js|jar|cmd|msi|scr|com|doc|docx|xls|xlsx|ppt|pptx|pdf|rtf|txt|csv|zip|rar|7z|gz"
             "|tar|iso|img|bin|dat|cfg|ini|conf|xml|json|png|jpg|jpeg|gif|bmp|tiff|svg|mp3|wav|mp4|avi|mkv)$' "
-            "ORDER BY Mtime DESC LIMIT 500"
-        )
+            "ORDER BY Mtime DESC"
+        ) #Archivos más recientes de la última semana
 
         # Inicializar pestañas
         self._init_query_tab(self.tab_users, "Usuarios", users_query, self.show_users_charts)
@@ -247,6 +252,16 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
                     # limpieza de textos
                     for k, v in row.items():
                         if isinstance(v, str):
+                            if v.endswith("Z") and "T" in v:
+                                try:
+                                    # Parsear ISO con microsegundos y Zulu (UTC)
+                                    dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+                                    # Convertir a hora local
+                                    dt_local = dt.astimezone()
+                                    # Formatear bonito
+                                    v = dt_local.strftime("%d/%m/%Y %H:%M:%S")
+                                except Exception:
+                                    pass
                             row[k] = v.strip()
                     rows.append(row)
                 except json.JSONDecodeError:
@@ -271,6 +286,7 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
                 "DisplayName": "Nombre visible",
                 "State": "Estado",
                 "StartMode": "Modo de arranque",
+                "Size": "Tamaño (Bytes)",
                 "Pid": "PID",
                 "Username": "Usuario",
                 "Mtime": "Última modificación",
@@ -565,4 +581,4 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
         counts = Counter([r.get("Mtime", "Sin fecha")[:10]
                         for r in rows if r.get("Mtime")])
         self._render_chart(counts, chart_frame,
-                        "Archivos recientes por fecha", "Fecha", "Cantidad")
+                        "Archivos de la última semana", "Fecha", "Cantidad")

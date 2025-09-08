@@ -28,7 +28,7 @@ from gui.log_viewer import LogViewerWindow
 from gui.edr.edr_viewer import EDRWindow
 from gui.ids.ids_viewer import IDSWindow
 from gui.sections import SECTIONS, BACKUPS, DESCRIPTIONS, PARAMETERS, IMAGES
-from utils.window_utils import top_focus
+from utils.window_utils import top_focus, ensure_icon
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -68,18 +68,21 @@ class HardBoxApp:
 
     def open_logs(self):
         win = LogViewerWindow(self.root)
+        ensure_icon(win)
         top_focus(win)
         win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
     
     def open_edr(self):
         win = EDRWindow(self.root)
+        ensure_icon(win)
         top_focus(win)
         win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
     def open_ids(self):
         win = IDSWindow(self.root)
+        ensure_icon(win)
         top_focus(win)
         win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
@@ -153,7 +156,8 @@ class HardBoxApp:
         if mode == "apply":
             # Si la sección tiene parámetros configurables, abrir formulario
             if base_name in PARAMETERS:
-                ParameterForm(self.root, base_name, PARAMETERS[base_name], execute_with_params, sections_list=SECTIONS)
+                win = ParameterForm(self.root, base_name, PARAMETERS[base_name], execute_with_params, sections_list=SECTIONS)
+                ensure_icon(win)
             else:
                 # Comportamiento actual sin formulario
                 backup_path = BACKUPS.get(base_name, "")
@@ -186,6 +190,6 @@ class HardBoxApp:
 
 if __name__ == "__main__":
     root = ctk.CTk()
-    #root.iconbitmap("./assets/images/HARDBOX.ico")
+    ensure_icon(root)
     app = HardBoxApp(root)
     root.mainloop()

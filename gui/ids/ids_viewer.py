@@ -9,7 +9,7 @@ import shutil
 from PIL import Image
 from utils.ids_utils import detect_snort_conf
 from utils.logger import log_action
-from utils.window_utils import top_focus
+from utils.window_utils import top_focus, ensure_icon
 
 SCRIPT_PATH = "scripts/powershell"
 
@@ -63,11 +63,13 @@ class IDSWindow(ctk.CTkToplevel):
     def open_config(self):
         """Abre la ventana de configuración"""
         win = SnortConfigWindow(self)
+        ensure_icon(win)
         top_focus(win)
 
     def open_alerts(self):
         """Abre o restaura la ventana singleton de alertas"""
         win = SnortAlertsWindow.open()
+        ensure_icon(win)
         top_focus(win)
 
     def is_installed(self) -> bool:
