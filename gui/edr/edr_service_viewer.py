@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from collections import Counter
 from utils.logger import log_action
-from utils.window_utils import top_focus
+from utils.window_utils import top_focus, ensure_icon
 from utils.edr_utils import get_reputation
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -375,9 +375,9 @@ class VelociraptorServiceWindow(ctk.CTkToplevel):
 
             # Crear ventana emergente para mostrar y copiar hashes
             hash_window = ctk.CTkToplevel(self)
-            top_focus(hash_window)
             hash_window.title("Hashes del archivo")
             hash_window.geometry("700x300")
+            hash_window.after(250, lambda: (ensure_icon(hash_window), top_focus(hash_window)))
 
             # Mensaje inicial
             msg = (

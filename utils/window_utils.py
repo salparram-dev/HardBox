@@ -7,7 +7,10 @@ def top_focus(win):
     win.lift()
     win.focus_force()
 
-ICO_PATH = os.path.abspath("./assets/images/HARDBOX.ico")
+# Ruta absoluta al icono, relativa a este archivo
+ICO_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "images", "HARDBOX.ico")
+)
 
 def set_icon(win):
     """Pone el icono .ico en la ventana indicada."""
@@ -16,6 +19,8 @@ def set_icon(win):
             win.iconbitmap(ICO_PATH)
         except Exception as e:
             print(f"No se pudo poner el icono: {e}")
+    else:
+        print(f"Icono no encontrado en: {ICO_PATH}")
 
 def ensure_icon(win):
     """Pone el icono ahora y lo vuelve a poner tras inicializar la ventana."""

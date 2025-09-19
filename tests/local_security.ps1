@@ -7,4 +7,5 @@
 # "LockoutBadCount = 5",
 # "ResetLockoutCount = 15",
 # "LockoutDuration = 15",
-net accounts 
+secedit /export /cfg C:\temp\resultado_seg_local.inf /areas SECURITYPOLICY
+notepad C:\temp\resultado_seg_local.inf

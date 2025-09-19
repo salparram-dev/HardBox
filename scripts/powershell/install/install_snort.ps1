@@ -54,7 +54,7 @@ foreach ($path in $possiblePaths) {
 }
 
 if ($snortPath) {
-    Write-Host "Añadiendo Snort al PATH del sistema: $snortPath"
+    Write-Host "Agregando Snort al PATH del sistema: $snortPath"
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
     if ($currentPath -notlike "*$snortPath*") {
         [Environment]::SetEnvironmentVariable(

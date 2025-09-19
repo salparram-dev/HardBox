@@ -225,27 +225,55 @@ class SnortAlertsWindow(ctk.CTkToplevel):
 
     def add_rule_from_form(self):
         try:
+            # --- Validar puertos ---
+            def is_valid_port(value: str) -> bool:
+                if value.lower() == "any":
+                    return True
+                if value.isdigit():
+                    num = int(value)
+                    return 1 <= num <= 65535
+                return False
+
+            src_port = self.src_port_var.get().strip()
+            dst_port = self.dst_port_var.get().strip()
+
+            if not is_valid_port(src_port):
+                log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "Valores incorrectos."})
+                messagebox.showerror("Error", "El puerto de origen debe ser 'any' o un número entre 1 y 65535.", parent=self)
+                return
+            if not is_valid_port(dst_port):
+                log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "Valores incorrectos."})
+                messagebox.showerror("Error", "El puerto de destino debe ser 'any' o un número entre 1 y 65535.", parent=self)
+                return
+            
+            # --- Validar SID ---
             sid_value = self.sid_var.get().strip()
             if not sid_value.isdigit():
+                log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "Valores incorrectos."})
                 messagebox.showerror("Error", "El SID debe ser numérico", parent=self)
                 return
 
+
+            # --- Construir regla ---
             rule = (
                 f"alert {self.proto_var.get()} "
-                f"{self.src_ip_var.get()} {self.src_port_var.get()} -> "
-                f"{self.dst_ip_var.get()} {self.dst_port_var.get()} "
+                f"{self.src_ip_var.get()} {src_port} -> "
+                f"{self.dst_ip_var.get()} {dst_port} "
                 f'(msg:"{self.msg_var.get()}"; sid:{sid_value}; rev:1;)'
             )
 
+            # --- Guardar en fichero ---
             with open(self.rules_file, "a", encoding="utf-8") as f:
                 f.write(rule + "\n")
 
             self.load_rules()
             log_action("Snort-Añadir regla", self.rules_file, {"success": True, "output": rule})
             messagebox.showinfo("Éxito", "Regla añadida correctamente.", parent=self)
+
         except Exception as e:
-            log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": "No se ha podido añadir la regla"})
+            log_action("Snort-Añadir regla", self.rules_file, {"success": False, "output": str(e)})
             messagebox.showerror("Error", str(e), parent=self)
+
 
     def save_rules(self):
         if self.rules_file:

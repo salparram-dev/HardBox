@@ -19,6 +19,7 @@ elevate_privileges()
 import customtkinter as ctk
 import tkinter.messagebox as messagebox
 import os
+import subprocess
 from PIL import Image
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.powershell_runner import run_powershell
@@ -38,7 +39,7 @@ class HardBoxApp:
         ctk.set_default_color_theme("blue")
 
         self.root = root
-        self.root.title("HardBox - Bastionado Seguro Windows 11")
+        self.root.title("HardBox - Bastionado Seguro Windows")
         self.root.geometry("1500x750")
 
         self.tabview = ctk.CTkTabview(self.root)
@@ -114,6 +115,13 @@ class HardBoxApp:
         )
         apply_btn.pack(side="left", padx=20)
 
+        verify_btn = ctk.CTkButton(
+            button_frame,
+            text="Verificar",
+            command=lambda: self.verify_section(script_base),
+        )
+        verify_btn.pack(side="left", padx=20)
+
         revert_btn = ctk.CTkButton(
             button_frame,
             text="Revertir",
@@ -122,6 +130,116 @@ class HardBoxApp:
             hover_color="#e53935"
         )
         revert_btn.pack(side="left", padx=20)
+
+    def verify_section(self, base_name):
+        if base_name == "local_security":
+            # Abre la consola de políticas locales
+            command = "secpol.msc"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Directiva de seguridad local"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "En la ventana de 'Directiva de seguridad local', revisa:\n\n"
+                "En 'Directiva de contraseñas':\n"
+                "  - Longitud mínima de contraseña\n"
+                "  - Complejidad de contraseña\n"
+                "  - Máx. días de validez de la contraseña\n"
+                "  - Mín. días antes de cambiar la contraseña\n"
+                "  - Historial de contraseñas\n\n"
+                "En 'Directiva de bloqueo de cuenta':\n"
+                "  - Intentos fallidos antes de bloqueo\n"
+                "  - Minutos para reiniciar contador de intentos\n"
+                "  - Duración del bloqueo (minutos)"
+            )
+
+        elif base_name == "auditing":
+            command = "auditpol /get /category:*"
+            output = subprocess.run(
+                ["powershell", "-Command", command],
+                capture_output=True,
+                encoding="cp850",
+                text=True
+            )
+
+            # Crear ventana emergente para mostrar el resultado
+            win = ctk.CTkToplevel(self.root)
+            win.after(200, lambda: ensure_icon(win))
+            top_focus(win)
+            win.title("Resultado de auditoría")
+            win.geometry("800x600")
+
+            text_box = ctk.CTkTextbox(win, wrap="none")
+            text_box.pack(fill="both", expand=True, padx=10, pady=10)
+
+            text_box.insert("1.0", output.stdout)
+            text_box.configure(state="disabled")  # Solo lectura
+
+            result = {"success": True, "output": "Se ha abierto una consola con los parámetros de Auditoría"}
+            log_action("Verificar", command, result)
+
+        elif base_name == "services":
+            command = "services.msc"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Servicios"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "En la ventana de 'Servicios', revisa que los servicios estén en el estado configurado."
+            )
+
+        elif base_name == "firewall":
+            command = "wf.msc"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Windows Defender Firewall"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "En 'Firewall de Windows con seguridad avanzada', revisa que los perfiles estén activos y con las reglas aplicadas."
+            )
+
+        elif base_name == "rdp":
+            command = "SystemPropertiesRemote.exe"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Propiedades de Acceso Remoto"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "En 'Propiedades del sistema', revisa la configuración de Escritorio remoto."
+            )
+
+        elif base_name == "usb":
+            command = "regedit.exe"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Editor de Registro"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "Se ha abierto el Editor del Registro.\n\n"
+                "Para comprobar la configuración del USB:\n"
+                "1. Navega hasta la clave:\n"
+                "   Equipo\\HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\USBSTOR\n"
+                "2. Busca el valor 'Start'.\n"
+                "   - 4 = Bloqueado (USB deshabilitado)\n"
+                "   - 3 = Manual\n"
+                "   - 2 = Automático (USB habilitado)"
+            )
+
+        elif base_name == "defender":
+            command = "start windowsdefender://threatsettings"
+            subprocess.Popen(command, shell=True)
+            result = {"success": True, "output": "Se ha abierto la ventana de Windows Defender"}
+            log_action("Verificar", command, result)
+            messagebox.showinfo(
+                "Verificación",
+                "En la ventana de 'Seguridad de Windows', comprueba lo siguiente:\n\n"
+                "En 'Protección contra virus y amenazas' → 'Administrar la configuración':\n"
+                "  - Protección en tiempo real: ACTIVADA (detecta y bloquea amenazas al instante)\n"
+                "  - Protección basada en la nube: ACTIVADA (mejora la detección con información online)\n"
+                "  - Envío automático de muestras: Según política (envía archivos sospechosos para análisis)\n\n"
+                "En 'Control de aplicaciones y navegador' → 'Configuración de protección basada en la reputación':\n"
+                "  - Protección contra aplicaciones potencialmente no deseadas: ACTIVADA (bloquea software no deseado)"
+            )
 
     def run_script(self, mode, base_name):
         ps1_path = os.path.join(SCRIPT_PATH, mode, f"{base_name}.ps1")

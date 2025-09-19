@@ -3,8 +3,6 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== Instalación de Velociraptor EDR (Standalone) ===" -ForegroundColor Cyan
-
 # Ruta de instalación por defecto
 $installDir = "C:\Program Files\Velociraptor"
 $exePath    = Join-Path $installDir "Velociraptor.exe"
@@ -44,7 +42,7 @@ Write-Host "Velociraptor instalado correctamente en $installDir" -ForegroundColo
 # Añadir al PATH del sistema
 # =============================
 if ($installDir) {
-    Write-Host "Añadiendo Snort al PATH del sistema: $installDir"
+    Write-Host "Agregando Velociraptor al PATH del sistema: $installDir"
     $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
     if ($currentPath -notlike "*$installDir*") {
         [Environment]::SetEnvironmentVariable(

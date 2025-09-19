@@ -5,7 +5,6 @@ try {
     # Desactivar RDP (conexiones remotas)
     Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 1
 
-    # Deshabilitar reglas de firewall de RDP (español e inglés)
     $rdpRules = Get-NetFirewallRule | Where-Object {
         $_.DisplayGroup -match "Remote Desktop|Escritorio remoto"
     }

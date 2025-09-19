@@ -40,7 +40,26 @@ class EDRWindow(ctk.CTkToplevel):
 
             self.show_info()
         else:
-            ctk.CTkLabel(self, text="Velociraptor no está instalado.").pack(pady=10)
+            ctk.CTkLabel(
+                self,
+                text="Velociraptor no está instalado.",
+                font=("Arial", 14)
+            ).pack(pady=(10, 5))
+
+            ctk.CTkLabel(
+                self,
+                text=(
+                    "🛡️ Se iniciará el asistente de instalación de Velociraptor.\n\n"
+                    "✅ Puedes aceptar todos los pasos tal como aparecen,\n"
+                    "ya que la instalación está automatizada y no requiere configuración manual.\n"
+                    "Velociraptor se instalará con los valores por defecto,\n"
+                    "optimizados para funcionar correctamente en este entorno."
+                ),
+                justify="left",
+                font=("Arial", 12),
+                text_color="#888888"
+            ).pack(pady=(0, 10))
+
             install_btn = ctk.CTkButton(
                 self,
                 text="Instalar Velociraptor",
@@ -49,6 +68,8 @@ class EDRWindow(ctk.CTkToplevel):
                 command=self.install
             )
             install_btn.pack(pady=15)
+
+            
 
     def is_installed(self) -> bool:
         """Comprueba si Velociraptor está disponible en el sistema."""
@@ -68,9 +89,11 @@ class EDRWindow(ctk.CTkToplevel):
                     f"Velociraptor instalado correctamente.\n"
                 ))
                 # Recargar ventana
-                self.after(0, lambda: (self.destroy(), EDRWindow(self.master)))
+                ensure_icon(self)
+                self.after(250, lambda: self.destroy())
             else:
-                self.after(0, lambda: messagebox.showerror("Error", result["output"]))
+                ensure_icon(self)
+                self.after(250, lambda: messagebox.showerror("Error", result["output"]))
 
         # Lanzar en segundo plano para no congelar la UI
         threading.Thread(target=worker, daemon=True).start()

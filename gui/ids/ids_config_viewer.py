@@ -124,7 +124,6 @@ class SnortConfigWindow(ctk.CTkToplevel):
             log_action("Snort-Guardar configuración", "snort", {"success": False, "output": "No se pudo guardar la configuración básica"})
             messagebox.showerror("Error", "Ruta de configuración no definida.", parent=self)
 
-
     def save_config(self):
         if self.config_path:
             try:

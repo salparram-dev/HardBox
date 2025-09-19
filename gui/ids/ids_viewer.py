@@ -50,7 +50,25 @@ class IDSWindow(ctk.CTkToplevel):
 
             self.show_info()
         else:
-            ctk.CTkLabel(self, text="Snort no está instalado.").pack(pady=10)
+            ctk.CTkLabel(
+                self,
+                text="Snort no está instalado.",
+                font=("Arial", 14)
+            ).pack(pady=(10, 5))
+
+            ctk.CTkLabel(
+                self,
+                text=(
+                    "🛠 Se iniciará el instalador de Npcap si no está presente en el sistema.\n"
+                    "✅ Puedes aceptar todos los pasos tal como aparecen, sin modificar nada.\n\n"
+                    "Una vez finalice Npcap, Snort se instalará automáticamente\n"
+                    "con la configuración predefinida, sin necesidad de intervención manual."
+                ),
+                justify="left",
+                font=("Arial", 12),
+                text_color="#888888"
+            ).pack(pady=(0, 10))
+
             install_btn = ctk.CTkButton(
                 self,
                 text="Instalar Snort",
@@ -109,7 +127,7 @@ class IDSWindow(ctk.CTkToplevel):
                     ))
 
                 # Recargar la ventana al terminar
-                self.after(0, lambda: (self.destroy(), IDSWindow(self.master)))
+                self.after(250, lambda: self.destroy())
             else:
                 self.after(0, lambda: messagebox.showerror("Error", result["output"], parent=self))
 

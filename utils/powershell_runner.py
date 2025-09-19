@@ -16,7 +16,7 @@ def run_powershell(script_path: str, params: list = None) -> dict:
             cmd,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=240,
             encoding="cp850",
             check=True
         )
@@ -43,7 +43,7 @@ def run_command(command: str) -> dict:
             ["powershell", "-ExecutionPolicy", "Bypass", "-Command", command],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=240,
             check=True
         )
         output = (completed.stderr + completed.stdout).strip()

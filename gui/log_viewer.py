@@ -95,6 +95,7 @@ class LogViewerWindow(ctk.CTkToplevel):
         filters = {
             "Todos": lambda l: True,
             "Aplicar": lambda l: l["action"] == "Aplicar",
+            "Verificar": lambda l: l["action"] == "Verificar",
             "Revertir": lambda l: l["action"] == "Revertir",
             "✔️ Éxito": lambda l: l["success"],
             "❌ Error": lambda l: not l["success"],
