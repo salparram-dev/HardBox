@@ -37,14 +37,15 @@ Opcional:
 
 3. **Ejecutar la aplicación en modo depuración:**: 
     ```bash
-    pip install -r requirements.txt
+    python gui/main_window.py
+
 
 ## 🔑 Configuración opcional
 
-Si deseas habilitar la integración con la API de VirusTotal, crea un archivo api_key.py en la carpeta resources con el siguiente contenido:
+Si deseas habilitar la integración con la API de VirusTotal, crea un archivo `api_key.py` en la carpeta `resources` con el siguiente contenido:
 
-```python
-VT_API_KEY = "Tu_API_key"
+    ```python
+    VT_API_KEY = "Tu_API_key"
 
 ## 🚀 Funcionalidades principales
 
