@@ -12,8 +12,13 @@ from utils.window_utils import top_focus, ensure_icon
 SCRIPT_PATH = "scripts/powershell"
 
 class EDRWindow(ctk.CTkToplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, nav_owner=None):
         super().__init__(master)
+        self._master = master
+        self._nav_owner = nav_owner
+
+        self.protocol("WM_DELETE_WINDOW", self.close_window)
+
         self.title("EDR - Velociraptor")
         self.geometry("800x600")
 
@@ -46,20 +51,6 @@ class EDRWindow(ctk.CTkToplevel):
                 font=("Arial", 14)
             ).pack(pady=(10, 5))
 
-            ctk.CTkLabel(
-                self,
-                text=(
-                    "🛡️ Se iniciará el asistente de instalación de Velociraptor.\n\n"
-                    "✅ Puedes aceptar todos los pasos tal como aparecen,\n"
-                    "ya que la instalación está automatizada y no requiere configuración manual.\n"
-                    "Velociraptor se instalará con los valores por defecto,\n"
-                    "optimizados para funcionar correctamente en este entorno."
-                ),
-                justify="left",
-                font=("Arial", 12),
-                text_color="#888888"
-            ).pack(pady=(0, 10))
-
             install_btn = ctk.CTkButton(
                 self,
                 text="Instalar Velociraptor",
@@ -67,9 +58,14 @@ class EDRWindow(ctk.CTkToplevel):
                 hover_color="#45A049",
                 command=self.install
             )
-            install_btn.pack(pady=15)
+            install_btn.pack(pady=15)     
 
-            
+    def close_window(self):
+        """Cierra la ventana y limpia la selección en la barra de navegación"""
+        if self._nav_owner and hasattr(self._nav_owner, "top_nav"):
+            self._nav_owner.top_nav.set("")
+        self.destroy()
+
 
     def is_installed(self) -> bool:
         """Comprueba si Velociraptor está disponible en el sistema."""
@@ -88,12 +84,22 @@ class EDRWindow(ctk.CTkToplevel):
                     "Instalación",
                     f"Velociraptor instalado correctamente.\n"
                 ))
-                # Recargar ventana
-                ensure_icon(self)
-                self.after(250, lambda: self.destroy())
+                def reload():
+                    self.destroy()
+                    new_win = EDRWindow(self._master, self._nav_owner)
+                     # aplicar icono tras un pequeño retardo para asegurar que el handle existe
+                    new_win.after(50, lambda: ensure_icon(new_win))
+                    new_win.after(100, lambda: ensure_icon(new_win))  # segundo intento por seguridad
+
+                    top_focus(new_win)
+                    new_win.after(200, lambda: new_win.attributes('-topmost', False))
+
+                    if hasattr(self._master, "top_nav"):
+                        new_win.protocol("WM_DELETE_WINDOW", lambda: (self._master.top_nav.set(""), new_win.destroy()))
+
+                self.after(250, reload)
             else:
-                ensure_icon(self)
-                self.after(250, lambda: messagebox.showerror("Error", result["output"]))
+                self.after(0, lambda: messagebox.showerror("Error", result["output"]))
 
         # Lanzar en segundo plano para no congelar la UI
         threading.Thread(target=worker, daemon=True).start()

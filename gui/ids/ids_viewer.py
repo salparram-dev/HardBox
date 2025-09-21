@@ -14,8 +14,13 @@ from utils.window_utils import top_focus, ensure_icon
 SCRIPT_PATH = "scripts/powershell"
 
 class IDSWindow(ctk.CTkToplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, nav_owner=None):
         super().__init__(master)
+
+        self._master = master
+        self._nav_owner = nav_owner
+
+        self.protocol("WM_DELETE_WINDOW", self.close_window)
         self.title("IDS - Snort")
         self.geometry("800x600")
 
@@ -78,6 +83,12 @@ class IDSWindow(ctk.CTkToplevel):
             )
             install_btn.pack(pady=15)
 
+    def close_window(self):
+        """Cierra la ventana y limpia la selección en la barra de navegación"""
+        if self._nav_owner and hasattr(self._nav_owner, "top_nav"):
+            self._nav_owner.top_nav.set("")
+        self.destroy()
+        
     def open_config(self):
         """Abre la ventana de configuración"""
         win = SnortConfigWindow(self)
@@ -125,7 +136,20 @@ class IDSWindow(ctk.CTkToplevel):
                         "Snort instalado, pero no se encontró snort.conf para reemplazar.",
                         parent=self
                     ))
+                def reload():
+                    self.destroy()
+                    new_win = IDSWindow(self._master, self._nav_owner)
+                     # aplicar icono tras un pequeño retardo para asegurar que el handle existe
+                    new_win.after(50, lambda: ensure_icon(new_win))
+                    new_win.after(100, lambda: ensure_icon(new_win))  # segundo intento por seguridad
 
+                    top_focus(new_win)
+                    new_win.after(200, lambda: new_win.attributes('-topmost', False))
+
+                    if hasattr(self._master, "top_nav"):
+                        new_win.protocol("WM_DELETE_WINDOW", lambda: (self._master.top_nav.set(""), new_win.destroy()))
+
+                self.after(250, reload)
                 # Recargar la ventana al terminar
                 self.after(250, lambda: self.destroy())
             else:

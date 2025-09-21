@@ -61,11 +61,16 @@ class HardBoxApp:
         if choice == "📜 Acciones":
             self.open_logs()
         elif choice == "🔍 IDS":
-             if messagebox.askyesno("Opciones avanzadas", "Esta sección es para usuarios avanzados. ¿Quieres continuar?"):
+            if messagebox.askyesno("Opciones avanzadas", "Esta sección es para usuarios avanzados. ¿Quieres continuar?"):
                 self.open_ids()
+            else:
+                self.top_nav.set("")
+            
         elif choice == "🛡️ EDR":
             if messagebox.askyesno("Opciones avanzadas", "Esta sección es para usuarios avanzados. ¿Quieres continuar?"):
                 self.open_edr()
+            else:
+                self.top_nav.set("")
 
     def open_logs(self):
         win = LogViewerWindow(self.root)
@@ -75,14 +80,14 @@ class HardBoxApp:
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
     
     def open_edr(self):
-        win = EDRWindow(self.root)
+        win = EDRWindow(self.root, self)
         ensure_icon(win)
         top_focus(win)
         win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
         win.protocol("WM_DELETE_WINDOW", lambda: (self.top_nav.set(""), win.destroy()))
 
     def open_ids(self):
-        win = IDSWindow(self.root)
+        win = IDSWindow(self.root, self)
         ensure_icon(win)
         top_focus(win)
         win.after(200, lambda: win.attributes('-topmost', False))  # quita el "siempre encima"
