@@ -42,8 +42,9 @@ Opcional:
 ## 🔑 Configuración opcional
 
 Si deseas habilitar la integración con la API de VirusTotal, crea un archivo api_key.py en la carpeta resources con el siguiente contenido:
-    ```bash
-    VT_API_KEY = "TU_API_KEY"
+
+```python
+VT_API_KEY = "Tu_API_key"
 
 ## 🚀 Funcionalidades principales
 
